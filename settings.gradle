@@ -1,0 +1,3 @@
+rootProject.name = "Simplicity"
+include ':app'
+include ':ModulePicLoad'
