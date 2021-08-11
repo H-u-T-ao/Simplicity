@@ -16,6 +16,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -28,13 +29,13 @@ public class HuTao {
     public static final String TAG = "HuTao";
 
     public static final String THREAD_NAME_DISPATCHER = "DISPATCHER";
-
     public static final int THREAD_PRIORITY_BACKGROUND = 10;
 
-    public static final int REQUEST_SUCCESS = 100;
-    public static final int REQUEST_FAIL = 101;
+    public static final int FIFO = 101;
+    public static final int LIFO = 102;
 
-    private final HashSet<BitmapHunter> failSet;
+    public static final int REQUEST_SUCCESS = 1;
+    public static final int REQUEST_FAIL = 2;
 
     static final Handler mainHandler = new Handler(Looper.getMainLooper()) {
         @Override
@@ -59,12 +60,16 @@ public class HuTao {
     final ResourceRequestHandler resourceRequestHandler;
     final List<RequestHandler> requestHandlerList;
     final ExecutorService service;
+    final int maxNumber;
+    final int mode;
+    private final HashSet<BitmapHunter> failSet;
 
     private HuTao(Context context, Dispatcher dispatcher, MemoryCache memoryCache,
                   MemoryCacheRequestHandler memoryCacheRequestHandler,
                   ResourceRequestHandler resourceRequestHandler,
                   List<RequestHandler> requestHandlerList,
-                  ExecutorService service, HashSet<BitmapHunter> failSet) {
+                  ExecutorService service, int maxNumber, int mode,
+                  HashSet<BitmapHunter> failSet) {
         this.context = context;
         this.dispatcher = dispatcher;
         this.memoryCache = memoryCache;
@@ -72,6 +77,8 @@ public class HuTao {
         this.resourceRequestHandler = resourceRequestHandler;
         this.requestHandlerList = requestHandlerList;
         this.service = service;
+        this.maxNumber = maxNumber;
+        this.mode = mode;
         this.failSet = failSet;
     }
 
@@ -179,6 +186,8 @@ public class HuTao {
 
         private final Context context;
         private ExecutorService service;
+        private int maxNumber;
+        private int mode;
         private MemoryCache memoryCache;
         private List<RequestHandler> requestHandlerList;
         private HashSet<BitmapHunter> failSet;
@@ -195,8 +204,13 @@ public class HuTao {
             Context context = this.context;
 
             if (service == null) {
+                maxNumber = 5;
                 service = new ThreadPoolExecutor(5, 5,
-                        0, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+                        0, TimeUnit.SECONDS, new ArrayBlockingQueue<>(0));
+            }
+
+            if (mode == 0) {
+                mode = FIFO;
             }
 
             if (memoryCache == null) {
@@ -213,13 +227,14 @@ public class HuTao {
                 requestHandlerList.add(new NetWorkRequestHandler());
             }
 
-            Dispatcher dispatcher = new Dispatcher(mainHandler, service);
+            Dispatcher dispatcher = new Dispatcher(mainHandler, service, maxNumber, mode);
 
             return new HuTao(context, dispatcher, memoryCache,
                     memoryCacheRequestHandler,
                     resourceRequestHandler,
                     requestHandlerList,
-                    service, failSet);
+                    service, maxNumber, mode,
+                    failSet);
 
         }
 
@@ -231,13 +246,30 @@ public class HuTao {
             return this;
         }
 
-        public Builder setExecutorService(ExecutorService service) {
+        public Builder setMode(int mode) {
+            if (this.mode == FIFO || this.mode == LIFO) {
+                throw new IllegalStateException("不能重复设置加载模式");
+            }
+            if (mode == FIFO || mode == LIFO) {
+                this.mode = mode;
+            } else {
+                throw new IllegalArgumentException("设置的加载模式参数有误");
+            }
+
+            return this;
+        }
+
+        public Builder setExecutorService(ExecutorService service, int maxNumber) {
             if (service == null) {
                 throw new NullPointerException("设置的线程服务实现类不应为空");
+            }
+            if (maxNumber <= 0) {
+                throw new IllegalArgumentException("允许同时处理的图片数量不应为非正数");
             }
             if (this.service != null) {
                 throw new IllegalStateException("不能重复设置线程服务实现类");
             }
+            this.maxNumber = maxNumber;
             this.service = service;
 
             return this;

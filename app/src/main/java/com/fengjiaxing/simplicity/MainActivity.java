@@ -8,6 +8,8 @@ import android.widget.ImageView;
 
 import com.fengjiaxing.hutao.HuTao;
 
+import java.util.concurrent.LinkedBlockingQueue;
+
 public class MainActivity extends AppCompatActivity {
 
     @Override
@@ -36,5 +38,6 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(() -> HuTao.get(MainActivity.this).load(uri).into(iv));
             }
         }).start();
+
     }
 }
