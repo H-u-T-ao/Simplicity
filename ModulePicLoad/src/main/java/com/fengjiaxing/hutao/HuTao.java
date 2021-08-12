@@ -96,6 +96,18 @@ public class HuTao {
         return huTao;
     }
 
+    public static void setHuTaoInstance(HuTao instance) {
+        if (instance == null) {
+            throw new NullPointerException("设置的HuTao对象不应为null");
+        }
+        synchronized (HuTao.class) {
+            if (huTao != null) {
+                throw new IllegalStateException("不能重复设置唯一的HuTao对象");
+            }
+            huTao = instance;
+        }
+    }
+
     /**
      * 根据{@linkplain Uri}加载位图
      *
@@ -206,7 +218,7 @@ public class HuTao {
             if (service == null) {
                 maxNumber = 5;
                 service = new ThreadPoolExecutor(5, 5,
-                        0, TimeUnit.SECONDS, new ArrayBlockingQueue<>(0));
+                        0, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
             }
 
             if (mode == 0) {

@@ -20,9 +20,6 @@ public class Dispatcher {
     private static final int TASK_QUEUE = 1;
     static final int TASK_COMPLETE = 2;
 
-    private static final int FIFO_DISPATCHER = 101;
-    private static final int LIFO_DISPATCHER = 102;
-
     private final Handler mainHandler;
     private final DispatcherThread dispatcherThread;
     final Handler handler;
@@ -67,7 +64,7 @@ public class Dispatcher {
                 }
             }
         }
-        handler.sendMessage(handler.obtainMessage(LIFO_DISPATCHER));
+        handler.sendMessage(handler.obtainMessage(LIFO));
     }
 
     private void FirstInFirstOutDispatcher() {
@@ -83,7 +80,7 @@ public class Dispatcher {
                 }
             }
         }
-        handler.sendMessage(handler.obtainMessage(FIFO_DISPATCHER));
+        handler.sendMessage(handler.obtainMessage(FIFO));
     }
 
     private void complete(BitmapHunter hunter) {
@@ -119,10 +116,10 @@ public class Dispatcher {
         @Override
         public void handleMessage(@NonNull Message msg) {
             switch (msg.what) {
-                case FIFO_DISPATCHER:
+                case FIFO:
                     dispatcher.FirstInFirstOutDispatcher();
                     break;
-                case LIFO_DISPATCHER:
+                case LIFO:
                     dispatcher.LastInFirstOutDispatcher();
                     break;
                 case TASK_QUEUE:
