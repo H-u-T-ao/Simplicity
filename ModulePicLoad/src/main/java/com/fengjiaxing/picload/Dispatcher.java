@@ -1,4 +1,4 @@
-package com.fengjiaxing.hutao;
+package com.fengjiaxing.picload;
 
 import android.graphics.Bitmap;
 import android.os.Handler;
@@ -12,8 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.fengjiaxing.hutao.HuTao.*;
 
 public class Dispatcher {
 
@@ -47,7 +45,7 @@ public class Dispatcher {
     }
 
     private void queue(RequestData data) {
-        BitmapHunter hunter = new BitmapHunter(huTao, huTao.dispatcher, data);
+        BitmapHunter hunter = new BitmapHunter(Simplicity.simplicity, Simplicity.simplicity.dispatcher, data);
         list.add(hunter);
     }
 
@@ -64,7 +62,7 @@ public class Dispatcher {
                 }
             }
         }
-        handler.sendMessage(handler.obtainMessage(LIFO));
+        handler.sendMessage(handler.obtainMessage(Simplicity.LIFO));
     }
 
     private void FirstInFirstOutDispatcher() {
@@ -80,15 +78,15 @@ public class Dispatcher {
                 }
             }
         }
-        handler.sendMessage(handler.obtainMessage(FIFO));
+        handler.sendMessage(handler.obtainMessage(Simplicity.FIFO));
     }
 
     private void complete(BitmapHunter hunter) {
         Bitmap result = hunter.getResult();
         if (result != null) {
-            mainHandler.sendMessage(mainHandler.obtainMessage(REQUEST_SUCCESS, hunter));
+            mainHandler.sendMessage(mainHandler.obtainMessage(Simplicity.REQUEST_SUCCESS, hunter));
         } else {
-            mainHandler.sendMessage(mainHandler.obtainMessage(REQUEST_FAIL, hunter));
+            mainHandler.sendMessage(mainHandler.obtainMessage(Simplicity.REQUEST_FAIL, hunter));
         }
         boolean b;
         do {
@@ -100,7 +98,7 @@ public class Dispatcher {
     static class DispatcherThread extends HandlerThread {
 
         public DispatcherThread() {
-            super(THREAD_NAME_DISPATCHER, THREAD_PRIORITY_BACKGROUND);
+            super(Simplicity.THREAD_NAME_DISPATCHER, Simplicity.THREAD_PRIORITY_BACKGROUND);
         }
     }
 
@@ -116,10 +114,10 @@ public class Dispatcher {
         @Override
         public void handleMessage(@NonNull Message msg) {
             switch (msg.what) {
-                case FIFO:
+                case Simplicity.FIFO:
                     dispatcher.FirstInFirstOutDispatcher();
                     break;
-                case LIFO:
+                case Simplicity.LIFO:
                     dispatcher.LastInFirstOutDispatcher();
                     break;
                 case TASK_QUEUE:

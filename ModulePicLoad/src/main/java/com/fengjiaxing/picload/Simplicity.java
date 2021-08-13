@@ -1,4 +1,4 @@
-package com.fengjiaxing.hutao;
+package com.fengjiaxing.picload;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -16,17 +16,16 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.fengjiaxing.hutao.Utils.*;
+import static com.fengjiaxing.picload.Utils.*;
 
-public class HuTao {
+public class Simplicity {
 
-    public static final String TAG = "HuTao";
+    public static final String TAG = "Simplicity";
 
     public static final String THREAD_NAME_DISPATCHER = "DISPATCHER";
     public static final int THREAD_PRIORITY_BACKGROUND = 10;
@@ -43,11 +42,11 @@ public class HuTao {
             switch (msg.what) {
                 case REQUEST_SUCCESS:
                     BitmapHunter hunterS = (BitmapHunter) msg.obj;
-                    hunterS.huTao.setBitmap(hunterS);
+                    hunterS.simplicity.setBitmap(hunterS);
                     break;
                 case REQUEST_FAIL:
                     BitmapHunter hunterF = (BitmapHunter) msg.obj;
-                    hunterF.huTao.requestFail(hunterF);
+                    hunterF.simplicity.requestFail(hunterF);
                     break;
             }
         }
@@ -64,12 +63,12 @@ public class HuTao {
     final int mode;
     private final HashSet<BitmapHunter> failSet;
 
-    private HuTao(Context context, Dispatcher dispatcher, MemoryCache memoryCache,
-                  MemoryCacheRequestHandler memoryCacheRequestHandler,
-                  ResourceRequestHandler resourceRequestHandler,
-                  List<RequestHandler> requestHandlerList,
-                  ExecutorService service, int maxNumber, int mode,
-                  HashSet<BitmapHunter> failSet) {
+    private Simplicity(Context context, Dispatcher dispatcher, MemoryCache memoryCache,
+                       MemoryCacheRequestHandler memoryCacheRequestHandler,
+                       ResourceRequestHandler resourceRequestHandler,
+                       List<RequestHandler> requestHandlerList,
+                       ExecutorService service, int maxNumber, int mode,
+                       HashSet<BitmapHunter> failSet) {
         this.context = context;
         this.dispatcher = dispatcher;
         this.memoryCache = memoryCache;
@@ -83,28 +82,28 @@ public class HuTao {
     }
 
     @SuppressLint("StaticFieldLeak")
-    static HuTao huTao = null;
+    static Simplicity simplicity = null;
 
-    public static HuTao get(Context context) {
-        if (huTao == null) {
-            synchronized (HuTao.class) {
-                if (huTao == null) {
-                    huTao = new Builder(context).build();
+    public static Simplicity get(Context context) {
+        if (simplicity == null) {
+            synchronized (Simplicity.class) {
+                if (simplicity == null) {
+                    simplicity = new Builder(context).build();
                 }
             }
         }
-        return huTao;
+        return simplicity;
     }
 
-    public static void setHuTaoInstance(HuTao instance) {
+    public static void setSimplicityInstance(Simplicity instance) {
         if (instance == null) {
-            throw new NullPointerException("设置的HuTao对象不应为null");
+            throw new NullPointerException("设置的Simplicity对象不应为null");
         }
-        synchronized (HuTao.class) {
-            if (huTao != null) {
-                throw new IllegalStateException("不能重复设置唯一的HuTao对象");
+        synchronized (Simplicity.class) {
+            if (simplicity != null) {
+                throw new IllegalStateException("不能重复设置唯一的Simplicity对象");
             }
-            huTao = instance;
+            simplicity = instance;
         }
     }
 
@@ -212,7 +211,7 @@ public class HuTao {
             this.context = context.getApplicationContext();
         }
 
-        public HuTao build() {
+        public Simplicity build() {
             Context context = this.context;
 
             if (service == null) {
@@ -222,11 +221,11 @@ public class HuTao {
             }
 
             if (mode == 0) {
-                mode = FIFO;
+                mode = LIFO;
             }
 
             if (memoryCache == null) {
-                memoryCache = new HuTaoMemoryCache();
+                memoryCache = new SimplicityMemoryCache();
             }
 
             MemoryCacheRequestHandler memoryCacheRequestHandler = new MemoryCacheRequestHandler();
@@ -241,7 +240,7 @@ public class HuTao {
 
             Dispatcher dispatcher = new Dispatcher(mainHandler, service, maxNumber, mode);
 
-            return new HuTao(context, dispatcher, memoryCache,
+            return new Simplicity(context, dispatcher, memoryCache,
                     memoryCacheRequestHandler,
                     resourceRequestHandler,
                     requestHandlerList,
@@ -299,7 +298,7 @@ public class HuTao {
             return this;
         }
 
-        public Builder setMemoryCache(HuTaoMemoryCache memoryCache) {
+        public Builder setMemoryCache(SimplicityMemoryCache memoryCache) {
             if (memoryCache == null) {
                 throw new NullPointerException("设置的内存缓存实现类不应为空");
             }

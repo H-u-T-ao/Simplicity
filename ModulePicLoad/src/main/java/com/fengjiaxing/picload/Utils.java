@@ -1,11 +1,9 @@
-package com.fengjiaxing.hutao;
+package com.fengjiaxing.picload;
 
 import android.os.Looper;
 import android.util.Log;
 
 import java.security.MessageDigest;
-
-import static com.fengjiaxing.hutao.HuTao.*;
 
 public class Utils {
 
@@ -18,7 +16,7 @@ public class Utils {
         } else {
             hunterInfo = "RESOURCE_ID:" + data.resourceId;
         }
-        Log.d(TAG, s + hunterInfo + " - SOURCE:" + hunter.getFrom());
+        Log.d(Simplicity.TAG, s + hunterInfo + " - SOURCE:" + hunter.getFrom());
     }
 
     public static boolean isMain() {

@@ -1,4 +1,4 @@
-package com.fengjiaxing.hutao;
+package com.fengjiaxing.picload;
 
 import android.graphics.Bitmap;
 
@@ -6,7 +6,7 @@ import java.io.IOException;
 
 public interface RequestHandler {
 
-    Bitmap load(HuTao huTao, RequestData data) throws IOException;
+    Bitmap load(Simplicity simplicity, RequestData data) throws IOException;
 
     String loadSource();
 

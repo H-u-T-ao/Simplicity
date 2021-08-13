@@ -1,13 +1,13 @@
-package com.fengjiaxing.hutao;
+package com.fengjiaxing.picload;
 
 import android.graphics.Bitmap;
 import android.util.LruCache;
 
-public class HuTaoMemoryCache implements MemoryCache {
+public class SimplicityMemoryCache implements MemoryCache {
 
     public final LruCache<String, Bitmap> memoryCache;
 
-    public HuTaoMemoryCache() {
+    public SimplicityMemoryCache() {
         memoryCache = new LruCache<>((int) (Runtime.getRuntime().maxMemory() / 8));
     }
 

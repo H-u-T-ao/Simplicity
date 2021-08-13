@@ -1,4 +1,4 @@
-package com.fengjiaxing.hutao;
+package com.fengjiaxing.picload;
 
 import org.junit.Test;
 

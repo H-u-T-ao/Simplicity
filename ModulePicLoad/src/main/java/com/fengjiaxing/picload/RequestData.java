@@ -1,10 +1,10 @@
-package com.fengjiaxing.hutao;
+package com.fengjiaxing.picload;
 
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.widget.ImageView;
 
-import static com.fengjiaxing.hutao.Utils.createMd5Key;
+import static com.fengjiaxing.picload.Utils.createMd5Key;
 
 public class RequestData {
 
@@ -14,6 +14,7 @@ public class RequestData {
     ImageView iv;
 
     Drawable errorDrawable;
+    RequestBuilder.CompressConfig compressConfig;
 
     public String key;
 

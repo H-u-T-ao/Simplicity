@@ -1,4 +1,4 @@
-package com.fengjiaxing.hutao;
+package com.fengjiaxing.picload;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -7,22 +7,21 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.widget.ImageView;
 
-import static com.fengjiaxing.hutao.Utils.*;
-
 public class RequestBuilder {
 
-    private final HuTao huTao;
+    private final Simplicity simplicity;
     private final RequestData data;
 
     private Drawable errorDrawable;
+    private CompressConfig compressConfig;
 
-    RequestBuilder(HuTao huTao, Uri uri) {
-        this.huTao = huTao;
+    RequestBuilder(Simplicity simplicity, Uri uri) {
+        this.simplicity = simplicity;
         this.data = new RequestData(uri);
     }
 
-    RequestBuilder(HuTao huTao, int resourceId) {
-        this.huTao = huTao;
+    RequestBuilder(Simplicity simplicity, int resourceId) {
+        this.simplicity = simplicity;
         this.data = new RequestData(resourceId);
     }
 
@@ -38,22 +37,35 @@ public class RequestBuilder {
         if (resourceId <= 0) {
             throw new NullPointerException("设置的加载错误显示图片的资源ID不应为非正数");
         }
-        Bitmap bitmap = BitmapFactory.decodeResource(huTao.context.getResources(), resourceId);
+        Bitmap bitmap = BitmapFactory.decodeResource(simplicity.context.getResources(), resourceId);
         this.errorDrawable = new BitmapDrawable(bitmap);
         return this;
     }
 
+    public RequestBuilder setCompressConfig(CompressConfig compressConfig) {
+        if (compressConfig == null) {
+            throw new NullPointerException("设置的压缩位图配置不应为空指针");
+        }
+        this.compressConfig = compressConfig;
+        return this;
+    }
+
     public void into(ImageView iv) {
-        checkMain();
+        Utils.checkMain();
 
         data.iv = iv;
         data.errorDrawable = this.errorDrawable;
+        data.compressConfig = this.compressConfig;
 
         if (iv == null) {
             throw new NullPointerException("目标ImageView不应为空");
         }
 
-        huTao.prepareToExecute(data);
+        simplicity.prepareToExecute(data);
+    }
+
+    public interface CompressConfig {
+        Bitmap Compress(Bitmap bitmap);
     }
 
 }

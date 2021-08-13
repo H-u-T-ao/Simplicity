@@ -4,33 +4,39 @@
     android:layout_height="wrap_content"
     android:background="@color/app_transparent">
 
-    <com.fengjiaxing.simplicity.HuTaoImageView
+    <com.fengjiaxing.simplicity.SimplicityImageView
         android:id="@+id/hu_iv_item_list_1"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:layout_marginHorizontal="12dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginHorizontal="8dp"
+        android:layout_marginVertical="4dp"
         android:layout_weight="1"
-        android:src="@drawable/loading"
         android:scaleType="centerCrop" />
 
-    <com.fengjiaxing.simplicity.HuTaoImageView
+    <com.fengjiaxing.simplicity.SimplicityImageView
         android:id="@+id/hu_iv_item_list_2"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginVertical="4dp"
+        android:layout_marginEnd="8dp"
         android:layout_weight="1"
-        android:src="@drawable/loading"
         android:scaleType="centerCrop" />
 
-    <com.fengjiaxing.simplicity.HuTaoImageView
+    <com.fengjiaxing.simplicity.SimplicityImageView
         android:id="@+id/hu_iv_item_list_3"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:layout_marginHorizontal="12dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginVertical="4dp"
         android:layout_weight="1"
-        android:src="@drawable/loading"
+        android:scaleType="centerCrop" />
+
+    <com.fengjiaxing.simplicity.SimplicityImageView
+        android:id="@+id/hu_iv_item_list_4"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginHorizontal="8dp"
+        android:layout_marginVertical="4dp"
+        android:layout_weight="1"
         android:scaleType="centerCrop" />
 
 </LinearLayout>

@@ -1,4 +1,4 @@
-package com.fengjiaxing.hutao;
+package com.fengjiaxing.picload;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -18,7 +18,7 @@ public class NetWorkRequestHandler implements RequestHandler {
     private static final int TIME_OUT = 15000;
 
     @Override
-    public Bitmap load(HuTao huTao, RequestData data) {
+    public Bitmap load(Simplicity simplicity, RequestData data) {
         String scheme = data.uri.getScheme();
         Bitmap bitmap = null;
         if (SCHEME_HTTP.equals(scheme) || SCHEME_HTTPS.equals(scheme)) {
