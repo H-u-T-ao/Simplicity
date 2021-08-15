@@ -5,6 +5,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.widget.TextView;
@@ -44,6 +45,11 @@ public class ShowActivity extends AppCompatActivity {
         linearLayoutManager.setOrientation(RecyclerView.VERTICAL);
         list.setLayoutManager(linearLayoutManager);
         list.setAdapter(adapter);
+
+        findViewById(R.id.tv_show_action_bar).setOnClickListener(v -> {
+            Intent intent = new Intent(ShowActivity.this, ImageActivity.class);
+            startActivity(intent);
+        });
     }
 
 }
