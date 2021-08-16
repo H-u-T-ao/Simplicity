@@ -6,10 +6,15 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ImageActivity extends AppCompatActivity {
 
@@ -21,21 +26,20 @@ public class ImageActivity extends AppCompatActivity {
         setContentView(R.layout.activity_image);
 
         imageShowView = findViewById(R.id.isv_image_show);
-        Bitmap b = BitmapFactory.decodeResource(getResources(), R.drawable.ic_pic_corner);
-        imageShowView.setBitmap(b);
-        imageShowView.setOnCrossBoundary(new ImageShowView.OnCrossBoundaryListener() {
-            @Override
-            public void crossLeft() {
-            }
-
-            @Override
-            public void crossRight() {
-            }
-        });
+        List<Drawable> data = SimplicityImageView.getDrawableList();
+//        Bitmap b = BitmapFactory.decodeResource(getResources(), R.drawable.ic_test);
+        ArrayList<Bitmap> list = new ArrayList<>();
+//        for (int i = 0; i < 10; i++) {
+//            list.add(b);
+//        }
+        for (int i = 0; i < data.size(); i++) {
+            Bitmap bitmap = ((BitmapDrawable) data.get(i)).getBitmap();
+            list.add(bitmap);
+        }
+        imageShowView.setBitmapList(list);
+        imageShowView.setAnimSpeed(1);
+        imageShowView.setRefreshRate(MainActivity.refreshRate);
     }
-
-    int i = 0;
-    int j = 0;
 
     @Override
     protected void onStart() {

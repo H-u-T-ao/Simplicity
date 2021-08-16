@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.view.Display;
 import android.widget.Button;
 
 import com.fengjiaxing.picload.SimplicityCompressConfig;
@@ -26,6 +27,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
+
+    public static float refreshRate;
 
     private RecyclerView list;
     private Button btnSelectNum;
@@ -89,6 +92,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }, 0, 1);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Display display = getWindowManager().getDefaultDisplay();
+        refreshRate = display.getRefreshRate();
     }
 
     @Override
