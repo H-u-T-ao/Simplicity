@@ -10,6 +10,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,6 +19,7 @@ import android.os.Message;
 import android.view.Display;
 import android.widget.Button;
 
+import com.fengjiaxing.picload.Simplicity;
 import com.fengjiaxing.picload.SimplicityCompressConfig;
 
 import java.io.File;
@@ -70,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
         SimplicityImageView.setMax(99);
 
         adapter = new AdapterFile(this, data);
+//        adapter = new AdapterUri(this, data);
         adapter.setCompressConfig(new SimplicityCompressConfig(1024 * 1024));
 
         list.setHasFixedSize(true);

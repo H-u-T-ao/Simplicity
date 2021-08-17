@@ -199,6 +199,7 @@ public class Simplicity {
         private ExecutorService service;
         private int maxNumber;
         private int mode;
+        private int batch;
         private MemoryCache memoryCache;
         private List<RequestHandler> requestHandlerList;
         private HashSet<BitmapHunter> failSet;
@@ -221,7 +222,11 @@ public class Simplicity {
             }
 
             if (mode == 0) {
-                mode = LIFO;
+                mode = FIFO;
+            }
+
+            if (batch == 0) {
+                batch = 10;
             }
 
             if (memoryCache == null) {
@@ -238,7 +243,7 @@ public class Simplicity {
                 requestHandlerList.add(new NetWorkRequestHandler());
             }
 
-            Dispatcher dispatcher = new Dispatcher(mainHandler, service, maxNumber, mode);
+            Dispatcher dispatcher = new Dispatcher(mainHandler, service, maxNumber, mode, batch);
 
             return new Simplicity(context, dispatcher, memoryCache,
                     memoryCacheRequestHandler,
@@ -306,6 +311,16 @@ public class Simplicity {
                 throw new IllegalStateException("不能重复设置内存缓存实现类");
             }
             this.memoryCache = memoryCache;
+
+            return this;
+        }
+
+        public Builder setBatch(int batch) {
+            if (batch <= 0) {
+                throw new IllegalArgumentException("设置的批处理数不应为非正数");
+            }
+
+            this.batch = batch;
 
             return this;
         }

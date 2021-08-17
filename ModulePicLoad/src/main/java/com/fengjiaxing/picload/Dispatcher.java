@@ -23,24 +23,26 @@ public class Dispatcher {
     final Handler handler;
     private final ExecutorService service;
     private final int maxNumber;
+    private final int batch;
 
     private final AtomicInteger hunting;
 
     private final List<BitmapHunter> list;
 
-    public Dispatcher(Handler mainHandler, ExecutorService service, int maxNumber, int mode) {
+    Dispatcher(Handler mainHandler, ExecutorService service, int maxNumber, int mode, int batch) {
         this.mainHandler = mainHandler;
         this.dispatcherThread = new DispatcherThread();
         dispatcherThread.start();
         this.handler = new DispatcherHandler(dispatcherThread.getLooper(), this);
         this.service = service;
         this.maxNumber = maxNumber;
+        this.batch = batch;
         this.hunting = new AtomicInteger(0);
         this.list = new ArrayList<>();
         handler.sendMessage(handler.obtainMessage(mode));
     }
 
-    public void execute(RequestData data) {
+    void execute(RequestData data) {
         handler.sendMessage(handler.obtainMessage(TASK_QUEUE, data));
     }
 
@@ -49,36 +51,85 @@ public class Dispatcher {
         list.add(hunter);
     }
 
-    private void LastInFirstOutDispatcher() {
+    private void submit(int index) {
+        BitmapHunter hunter = list.get(index);
+        hunter.future = service.submit(hunter);
+        list.remove(hunter);
+    }
+
+    private void lastInFirstOutDispatcher() {
         int h = hunting.get();
         if (h < maxNumber) {
             int s = list.size();
             if (s != 0) {
                 boolean b = hunting.compareAndSet(h, ++h);
                 if (b) {
-                    BitmapHunter hunter = list.get(s - 1);
-                    hunter.future = service.submit(hunter);
-                    list.remove(hunter);
+                    submit(s - 1);
                 }
             }
         }
         handler.sendMessage(handler.obtainMessage(Simplicity.LIFO));
     }
 
-    private void FirstInFirstOutDispatcher() {
+    private static final int NORMAL = 0;
+    private static final int BATCH = 1;
+
+    private int fifoState = NORMAL;
+    private int batchIndex;
+
+    private void firstInFirstOutDispatcher() {
         int h = hunting.get();
         if (h < maxNumber) {
             int s = list.size();
             if (s != 0) {
                 boolean b = hunting.compareAndSet(h, ++h);
-                if (b) {
-                    BitmapHunter hunter = list.get(0);
-                    hunter.future = service.submit(hunter);
-                    list.remove(hunter);
-                }
+                fifo(b, s);
             }
         }
         handler.sendMessage(handler.obtainMessage(Simplicity.FIFO));
+    }
+
+    private void fifo(boolean b, int s) {
+        if (!b) return;
+        switch (fifoState) {
+            case NORMAL:
+                if (s <= batch) {
+                    submit(0);
+                } else {
+                    changeState(BATCH, s);
+                }
+                break;
+            case BATCH:
+                if (s - batchIndex <= batch) {
+                    if (batchIndex < s) {
+                        submit(batchIndex);
+                    } else {
+                        changeState(NORMAL, s);
+                    }
+                } else if (s - batchIndex >= batch) {
+                    batchIndex = s - batch;
+                    submit(batchIndex);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void changeState(int fifoState, int s) {
+        switch (fifoState) {
+            case NORMAL:
+                submit(0);
+                this.fifoState = NORMAL;
+                break;
+            case BATCH:
+                batchIndex = s - batch;
+                submit(batchIndex);
+                this.fifoState = BATCH;
+                break;
+            default:
+                break;
+        }
     }
 
     private void complete(BitmapHunter hunter) {
@@ -115,10 +166,10 @@ public class Dispatcher {
         public void handleMessage(@NonNull Message msg) {
             switch (msg.what) {
                 case Simplicity.FIFO:
-                    dispatcher.FirstInFirstOutDispatcher();
+                    dispatcher.firstInFirstOutDispatcher();
                     break;
                 case Simplicity.LIFO:
-                    dispatcher.LastInFirstOutDispatcher();
+                    dispatcher.lastInFirstOutDispatcher();
                     break;
                 case TASK_QUEUE:
                     RequestData data = (RequestData) msg.obj;

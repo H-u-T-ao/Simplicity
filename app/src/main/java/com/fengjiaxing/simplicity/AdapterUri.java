@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.fengjiaxing.picload.RequestBuilder;
 import com.fengjiaxing.picload.Simplicity;
 
 import java.util.List;
@@ -19,6 +20,8 @@ public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
     private final List<Uri> list;
     private final int lastLine;
     private final int totalLine;
+
+    private RequestBuilder.CompressConfig compressConfig;
 
     public AdapterUri(Activity activity, List<Uri> list) {
         this.activity = activity;
@@ -103,8 +106,24 @@ public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
         }
     }
 
-    private void loadPic(Uri uri, SimplicityImageView iv){
-        Simplicity.get(activity).load(uri).setErrorDrawable(R.drawable.load_fail).into(iv);
+    private void loadPic(Uri uri, SimplicityImageView iv) {
+        if (compressConfig != null) {
+            Simplicity
+                    .get(activity)
+                    .load(uri)
+                    .setCompressConfig(compressConfig)
+                    .setErrorDrawable(R.drawable.load_fail)
+                    .into(iv);
+        } else {
+            Simplicity.get(activity)
+                    .load(uri)
+                    .setErrorDrawable(R.drawable.load_fail)
+                    .into(iv);
+        }
+    }
+
+    public void setCompressConfig(RequestBuilder.CompressConfig compressConfig) {
+        this.compressConfig = compressConfig;
     }
 
 }

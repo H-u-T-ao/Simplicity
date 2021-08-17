@@ -112,7 +112,8 @@ public class AdapterFile extends RecyclerView.Adapter<AdapterFile.ViewHolder> {
                     .get(activity)
                     .load(file)
                     .setCompressConfig(compressConfig)
-                    .setErrorDrawable(R.drawable.load_fail).into(iv);
+                    .setErrorDrawable(R.drawable.load_fail)
+                    .into(iv);
         } else {
             Simplicity.get(activity)
                     .load(file)
