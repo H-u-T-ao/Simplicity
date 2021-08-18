@@ -1,4 +1,4 @@
-package com.fengjiaxing.simplicity;
+package com.fengjiaxing.simplicity.Adapter;
 
 import android.app.Activity;
 import android.graphics.drawable.Drawable;
@@ -8,6 +8,9 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.fengjiaxing.simplicity.ImageSelectView;
+import com.fengjiaxing.simplicity.R;
 
 import java.util.List;
 
@@ -74,20 +77,15 @@ public class AdapterShow extends RecyclerView.Adapter<AdapterShow.ViewHolder> {
     }
 
     @Override
-    public int getItemViewType(int position) {
-        return position;
-    }
-
-    @Override
     public int getItemCount() {
         return totalLine;
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        SimplicityImageView iv1;
-        SimplicityImageView iv2;
-        SimplicityImageView iv3;
-        SimplicityImageView iv4;
+        ImageSelectView iv1;
+        ImageSelectView iv2;
+        ImageSelectView iv3;
+        ImageSelectView iv4;
 
         public ViewHolder(@NonNull View view) {
             super(view);

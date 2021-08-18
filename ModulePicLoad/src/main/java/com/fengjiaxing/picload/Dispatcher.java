@@ -9,7 +9,9 @@ import android.os.Message;
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -47,14 +49,14 @@ public class Dispatcher {
     }
 
     private void queue(RequestData data) {
-        BitmapHunter hunter = new BitmapHunter(Simplicity.simplicity, Simplicity.simplicity.dispatcher, data);
+        BitmapHunter hunter = new BitmapHunter(Simplicity.simplicity,
+                this, data);
         list.add(hunter);
     }
 
     private void submit(int index) {
         BitmapHunter hunter = list.get(index);
         hunter.future = service.submit(hunter);
-        list.remove(hunter);
     }
 
     private void lastInFirstOutDispatcher() {
@@ -133,17 +135,20 @@ public class Dispatcher {
     }
 
     private void complete(BitmapHunter hunter) {
-        Bitmap result = hunter.getResult();
-        if (result != null) {
-            mainHandler.sendMessage(mainHandler.obtainMessage(Simplicity.REQUEST_SUCCESS, hunter));
-        } else {
-            mainHandler.sendMessage(mainHandler.obtainMessage(Simplicity.REQUEST_FAIL, hunter));
+        if (list.remove(hunter)) {
+            Bitmap result = hunter.getResult();
+            if (result != null) {
+                result.prepareToDraw();
+                mainHandler.sendMessage(mainHandler.obtainMessage(Simplicity.REQUEST_SUCCESS, hunter));
+            } else {
+                mainHandler.sendMessage(mainHandler.obtainMessage(Simplicity.REQUEST_FAIL, hunter));
+            }
+            boolean b;
+            do {
+                int h = hunting.get();
+                b = hunting.compareAndSet(h, --h);
+            } while (!b);
         }
-        boolean b;
-        do {
-            int h = hunting.get();
-            b = hunting.compareAndSet(h, --h);
-        } while (!b);
     }
 
     static class DispatcherThread extends HandlerThread {

@@ -1,44 +1,38 @@
-package com.fengjiaxing.simplicity;
+package com.fengjiaxing.simplicity.ImagePreview;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
-import java.util.ArrayList;
+import com.fengjiaxing.simplicity.MainActivity;
+import com.fengjiaxing.simplicity.R;
+
 import java.util.List;
 
-public class ImageActivity extends AppCompatActivity {
-
-    private ImageShowView imageShowView;
+public class ImagePreviewActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_image);
 
-        imageShowView = findViewById(R.id.isv_image_show);
-        List<Drawable> data = SimplicityImageView.getDrawableList();
-//        Bitmap b = BitmapFactory.decodeResource(getResources(), R.drawable.ic_test);
-        ArrayList<Bitmap> list = new ArrayList<>();
-//        for (int i = 0; i < 10; i++) {
-//            list.add(b);
-//        }
-        for (int i = 0; i < data.size(); i++) {
-            Bitmap bitmap = ((BitmapDrawable) data.get(i)).getBitmap();
-            list.add(bitmap);
-        }
-        imageShowView.setBitmapList(list);
-        imageShowView.setAnimSpeed(1);
-        imageShowView.setRefreshRate(MainActivity.refreshRate);
+        Intent intent = getIntent();
+        List<Uri> list = intent.getParcelableArrayListExtra("list");
+        int beginIndex = intent.getIntExtra("index", 0);
+
+        ImagePreviewView imagePreviewView = findViewById(R.id.isv_image_show);
+
+        imagePreviewView.setBitmapUriList(list);
+        imagePreviewView.setBeginIndex(beginIndex);
+        imagePreviewView.setAnimSpeed(1);
+        imagePreviewView.setRefreshRate(MainActivity.refreshRate);
     }
 
     @Override
@@ -59,4 +53,5 @@ public class ImageActivity extends AppCompatActivity {
         window.setStatusBarColor(Color.TRANSPARENT);
         window.setNavigationBarColor(Color.TRANSPARENT);
     }
+
 }

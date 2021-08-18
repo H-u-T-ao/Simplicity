@@ -22,6 +22,7 @@ public class FileStreamRequestHandler implements RequestHandler {
         if (SCHEME_FILE.equals(scheme) || SCHEME_ANDROID_RESOURCE.equals(scheme)) {
             InputStream inputStream = simplicity.context.getContentResolver().openInputStream(uri);
             bitmap = BitmapFactory.decodeStream(inputStream);
+            inputStream.close();
         }
         return bitmap;
     }

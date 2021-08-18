@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:background="@color/black">
 
-    <com.fengjiaxing.simplicity.ImageShowView
+    <com.fengjiaxing.simplicity.ImagePreview.ImagePreviewView
         android:id="@+id/isv_image_show"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

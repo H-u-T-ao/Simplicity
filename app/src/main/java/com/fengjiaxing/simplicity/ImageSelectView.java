@@ -1,11 +1,10 @@
 package com.fengjiaxing.simplicity;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -15,10 +14,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class SimplicityImageView extends androidx.appcompat.widget.AppCompatImageView
+public class ImageSelectView extends androidx.appcompat.widget.AppCompatImageView
         implements View.OnClickListener {
 
-    private static final List<SimplicityImageView> list = Collections.synchronizedList(new ArrayList<>());
+    private static final List<ImageSelectView> list = Collections.synchronizedList(new ArrayList<>());
+
+    private static boolean selectable;
+
+    private OnNormalClickListener onNormalClickListener;
 
     private static int max = 10;
 
@@ -26,17 +29,19 @@ public class SimplicityImageView extends androidx.appcompat.widget.AppCompatImag
 
     private boolean selected;
 
-    public SimplicityImageView(Context context) {
+    private Object obj;
+
+    public ImageSelectView(Context context) {
         super(context);
         init();
     }
 
-    public SimplicityImageView(Context context, @Nullable AttributeSet attrs) {
+    public ImageSelectView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         init();
     }
 
-    public SimplicityImageView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public ImageSelectView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
@@ -76,6 +81,16 @@ public class SimplicityImageView extends androidx.appcompat.widget.AppCompatImag
 
     @Override
     public void onClick(View v) {
+        if (selectable) {
+            select();
+        } else {
+            if (onNormalClickListener != null) {
+                onNormalClickListener.normalClick();
+            }
+        }
+    }
+
+    public void select() {
         this.selected = !selected;
         if (this.selected) {
             if (list.size() < max) {
@@ -94,6 +109,14 @@ public class SimplicityImageView extends androidx.appcompat.widget.AppCompatImag
         }
     }
 
+    public interface OnNormalClickListener {
+        void normalClick();
+    }
+
+    public void setOnNormalClickListener(OnNormalClickListener listener) {
+        this.onNormalClickListener = listener;
+    }
+
     public static int getMax() {
         return max;
     }
@@ -102,16 +125,11 @@ public class SimplicityImageView extends androidx.appcompat.widget.AppCompatImag
         if (max <= 0) {
             throw new IllegalArgumentException("设置的最大选择图片数量不应为非正数");
         }
-        SimplicityImageView.max = max;
+        ImageSelectView.max = max;
     }
 
-    public static List<Drawable> getDrawableList() {
-        List<Drawable> drawableList = new ArrayList<>();
-        for (int i = 0; i < list.size(); i++) {
-            Drawable d = list.get(i).getDrawable();
-            drawableList.add(d);
-        }
-        return drawableList;
+    public static List<ImageSelectView> getList() {
+        return list;
     }
 
     public static int getSelectedCount() {
@@ -124,6 +142,22 @@ public class SimplicityImageView extends androidx.appcompat.widget.AppCompatImag
             list.get(i).invalidate();
         }
         list.clear();
+    }
+
+    public static boolean getSelectable() {
+        return selectable;
+    }
+
+    public static void setSelectable(boolean selectable) {
+        ImageSelectView.selectable = selectable;
+    }
+
+    public Object getObj() {
+        return obj;
+    }
+
+    public void setObj(Object obj) {
+        this.obj = obj;
     }
 
 }

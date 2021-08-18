@@ -2,6 +2,7 @@ package com.fengjiaxing.picload;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -53,15 +54,36 @@ public class RequestBuilder {
     public void into(ImageView iv) {
         Utils.checkMain();
 
-        data.iv = iv;
-        data.errorDrawable = this.errorDrawable;
-        data.compressConfig = this.compressConfig;
-
         if (iv == null) {
             throw new NullPointerException("目标ImageView不应为空");
         }
 
-        simplicity.prepareToExecute(data);
+        if (data.uri == null && data.resourceId == 0) {
+            iv.setTag(null);
+            iv.setImageDrawable(null);
+        } else {
+            String tag = data.uri != null ?
+                    data.uri.toString() : Integer.toString(data.resourceId);
+            iv.setTag(tag);
+            iv.setImageDrawable(null);
+            data.iv = iv;
+            data.errorDrawable = this.errorDrawable;
+            data.setCompressConfig(this.compressConfig);
+            simplicity.prepareToExecute(data);
+        }
+    }
+
+    public void into(CallBack callBack) {
+        Utils.checkMain();
+        if (callBack == null) {
+            throw new NullPointerException("回调不应为空");
+        }
+        if (data.uri != null || data.resourceId != 0) {
+            data.errorDrawable = this.errorDrawable;
+            data.setCompressConfig(this.compressConfig);
+            data.setCallBack(callBack);
+            simplicity.prepareToExecute(data);
+        }
     }
 
     public interface CompressConfig {

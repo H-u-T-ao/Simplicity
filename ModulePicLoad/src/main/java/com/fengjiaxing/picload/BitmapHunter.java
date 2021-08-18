@@ -1,5 +1,7 @@
 package com.fengjiaxing.picload;
 
+import static com.fengjiaxing.picload.Utils.*;
+
 import android.graphics.Bitmap;
 import android.os.Handler;
 
@@ -14,7 +16,7 @@ public class BitmapHunter implements Runnable {
     private final ResourceRequestHandler resourceRequestHandler;
     private final List<RequestHandler> requestHandlerList;
     private final Handler dispatcherHandler;
-    final RequestData data;
+    public final RequestData data;
     Future<?> future;
     private Bitmap result;
     private String from;
@@ -72,7 +74,7 @@ public class BitmapHunter implements Runnable {
         if (bitmap != null) {
             from = requestHandler.loadSource();
             if (!(requestHandler instanceof MemoryCacheRequestHandler)) {
-                RequestBuilder.CompressConfig compressConfig = data.compressConfig;
+                RequestBuilder.CompressConfig compressConfig = data.getCompressConfig();
                 if (compressConfig != null) {
                     bitmap = compressConfig.Compress(bitmap);
                 }

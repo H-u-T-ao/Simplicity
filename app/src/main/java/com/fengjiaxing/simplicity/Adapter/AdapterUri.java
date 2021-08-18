@@ -1,17 +1,24 @@
-package com.fengjiaxing.simplicity;
+package com.fengjiaxing.simplicity.Adapter;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.fengjiaxing.picload.RequestBuilder;
 import com.fengjiaxing.picload.Simplicity;
+import com.fengjiaxing.simplicity.ImagePreview.ImagePreviewActivity;
+import com.fengjiaxing.simplicity.ImageSelectView;
+import com.fengjiaxing.simplicity.R;
+import com.squareup.picasso.Picasso;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
@@ -52,21 +59,16 @@ public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
             if (lastLine == 1) {
                 Uri uri1 = list.get(4 * position);
                 loadPic(uri1, holder.iv1);
-                holder.iv2.setImageDrawable(null);
-                holder.iv3.setImageDrawable(null);
-                holder.iv4.setImageDrawable(null);
-                holder.iv2.setEnabled(false);
-                holder.iv3.setEnabled(false);
-                holder.iv4.setEnabled(false);
+                loadPic(null, holder.iv2);
+                loadPic(null, holder.iv3);
+                loadPic(null, holder.iv4);
             } else if (lastLine == 2) {
                 Uri uri1 = list.get(4 * position);
                 Uri uri2 = list.get(4 * position + 1);
                 loadPic(uri1, holder.iv1);
                 loadPic(uri2, holder.iv2);
-                holder.iv3.setImageDrawable(null);
-                holder.iv4.setImageDrawable(null);
-                holder.iv3.setEnabled(false);
-                holder.iv4.setEnabled(false);
+                loadPic(null, holder.iv3);
+                loadPic(null, holder.iv4);
             } else if (lastLine == 3) {
                 Uri uri1 = list.get(4 * position);
                 Uri uri2 = list.get(4 * position + 1);
@@ -74,15 +76,9 @@ public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
                 loadPic(uri1, holder.iv1);
                 loadPic(uri2, holder.iv2);
                 loadPic(uri3, holder.iv3);
-                holder.iv4.setImageDrawable(null);
-                holder.iv4.setEnabled(false);
+                loadPic(null, holder.iv4);
             }
         }
-    }
-
-    @Override
-    public int getItemViewType(int position) {
-        return position;
     }
 
     @Override
@@ -92,10 +88,10 @@ public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
 
     static class ViewHolder extends RecyclerView.ViewHolder {
 
-        SimplicityImageView iv1;
-        SimplicityImageView iv2;
-        SimplicityImageView iv3;
-        SimplicityImageView iv4;
+        ImageSelectView iv1;
+        ImageSelectView iv2;
+        ImageSelectView iv3;
+        ImageSelectView iv4;
 
         public ViewHolder(@NonNull View view) {
             super(view);
@@ -106,19 +102,44 @@ public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
         }
     }
 
-    private void loadPic(Uri uri, SimplicityImageView iv) {
-        if (compressConfig != null) {
-            Simplicity
-                    .get(activity)
-                    .load(uri)
-                    .setCompressConfig(compressConfig)
-                    .setErrorDrawable(R.drawable.load_fail)
-                    .into(iv);
-        } else {
+    private void loadPic(Uri uri, ImageSelectView iv) {
+        if (uri == null) {
             Simplicity.get(activity)
-                    .load(uri)
-                    .setErrorDrawable(R.drawable.load_fail)
+                    .load((Uri) null)
                     .into(iv);
+            iv.setEnabled(false);
+        } else {
+            if (compressConfig != null) {
+                Simplicity.get(activity)
+                        .load(uri)
+                        .setCompressConfig(compressConfig)
+                        .setErrorDrawable(R.drawable.load_fail)
+                        .into(iv);
+            } else {
+                Simplicity.get(activity)
+                        .load(uri)
+                        .setErrorDrawable(R.drawable.load_fail)
+                        .into(iv);
+            }
+            iv.setObj(uri);
+            iv.setOnNormalClickListener(() -> {
+                Intent intent = new Intent(activity, ImagePreviewActivity.class);
+                ArrayList<Uri> uriList = new ArrayList<>();
+                uriList.add(uri);
+                intent.putParcelableArrayListExtra("list", uriList);
+                intent.putExtra("index", 0);
+                activity.startActivity(intent);
+            });
+            iv.setOnLongClickListener(v -> {
+                boolean selectable = ImageSelectView.getSelectable();
+                if (!selectable) {
+                    ImageSelectView.setSelectable(true);
+                    iv.select();
+                    Toast.makeText(activity, "返回以退出编辑模式", Toast.LENGTH_LONG).show();
+                }
+                return true;
+            });
+            iv.setEnabled(true);
         }
     }
 

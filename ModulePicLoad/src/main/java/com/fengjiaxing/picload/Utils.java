@@ -1,5 +1,7 @@
 package com.fengjiaxing.picload;
 
+import static com.fengjiaxing.picload.Simplicity.*;
+
 import android.os.Looper;
 import android.util.Log;
 
@@ -16,7 +18,18 @@ public class Utils {
         } else {
             hunterInfo = "RESOURCE_ID:" + data.resourceId;
         }
-        Log.d(Simplicity.TAG, s + hunterInfo + " - SOURCE:" + hunter.getFrom());
+        Log.d(TAG, s + hunterInfo + " - SOURCE:" + hunter.getFrom());
+    }
+
+    public static void log(BitmapHunter hunter) {
+        RequestData data = hunter.data;
+        String hunterInfo;
+        if (data.uri != null) {
+            hunterInfo = "URI:" + data.uri.toString();
+        } else {
+            hunterInfo = "RESOURCE_ID:" + data.resourceId;
+        }
+        Log.d(TAG, hunterInfo + " - REQUEST_CANCEL");
     }
 
     public static boolean isMain() {

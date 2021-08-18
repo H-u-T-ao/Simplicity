@@ -10,17 +10,13 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.widget.TextView;
 
-import com.fengjiaxing.picload.SimplicityCompressConfig;
+import com.fengjiaxing.simplicity.Adapter.AdapterShow;
+import com.fengjiaxing.simplicity.ImagePreview.ImagePreviewActivity;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class ShowActivity extends AppCompatActivity {
-
-    private TextView tvActionBar;
-
-    private RecyclerView list;
-
-    private AdapterShow adapter;
+public class SummaryActivity extends AppCompatActivity {
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -28,14 +24,21 @@ public class ShowActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_show);
 
-        tvActionBar = findViewById(R.id.tv_show_action_bar);
-        list = findViewById(R.id.rv_show_list);
+        TextView tvActionBar = findViewById(R.id.tv_show_action_bar);
+        RecyclerView list = findViewById(R.id.rv_show_list);
 
-        List<Drawable> data = SimplicityImageView.getDrawableList();
+        List<ImageSelectView> ivs = ImageSelectView.getList();
 
-        adapter = new AdapterShow(this, data);
+        List<Drawable> data = new ArrayList<>();
 
-        tvActionBar.setText("已选择" + data.size() + "项");
+        for (int i = 0; i < ivs.size(); i++) {
+            Drawable drawable = ivs.get(i).getDrawable();
+            data.add(drawable);
+        }
+
+        tvActionBar.setText("已选择" + ivs.size() + "项");
+
+        AdapterShow adapter = new AdapterShow(this, data);
 
         list.setHasFixedSize(true);
         list.setFocusable(false);
@@ -46,10 +49,6 @@ public class ShowActivity extends AppCompatActivity {
         list.setLayoutManager(linearLayoutManager);
         list.setAdapter(adapter);
 
-        findViewById(R.id.tv_show_action_bar).setOnClickListener(v -> {
-            Intent intent = new Intent(ShowActivity.this, ImageActivity.class);
-            startActivity(intent);
-        });
     }
 
 }

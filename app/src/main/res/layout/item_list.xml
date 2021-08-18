@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:background="@color/app_transparent">
 
-    <com.fengjiaxing.simplicity.SimplicityImageView
+    <com.fengjiaxing.simplicity.ImageSelectView
         android:id="@+id/hu_iv_item_list_1"
         android:layout_width="0dp"
         android:layout_height="1dp"
@@ -13,7 +13,7 @@
         android:layout_weight="1"
         android:scaleType="centerCrop" />
 
-    <com.fengjiaxing.simplicity.SimplicityImageView
+    <com.fengjiaxing.simplicity.ImageSelectView
         android:id="@+id/hu_iv_item_list_2"
         android:layout_width="0dp"
         android:layout_height="1dp"
@@ -22,7 +22,7 @@
         android:layout_weight="1"
         android:scaleType="centerCrop" />
 
-    <com.fengjiaxing.simplicity.SimplicityImageView
+    <com.fengjiaxing.simplicity.ImageSelectView
         android:id="@+id/hu_iv_item_list_3"
         android:layout_width="0dp"
         android:layout_height="1dp"
@@ -30,7 +30,7 @@
         android:layout_weight="1"
         android:scaleType="centerCrop" />
 
-    <com.fengjiaxing.simplicity.SimplicityImageView
+    <com.fengjiaxing.simplicity.ImageSelectView
         android:id="@+id/hu_iv_item_list_4"
         android:layout_width="0dp"
         android:layout_height="1dp"

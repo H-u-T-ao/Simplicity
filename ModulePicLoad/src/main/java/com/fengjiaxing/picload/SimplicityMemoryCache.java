@@ -8,7 +8,8 @@ public class SimplicityMemoryCache implements MemoryCache {
     public final LruCache<String, Bitmap> memoryCache;
 
     public SimplicityMemoryCache() {
-        memoryCache = new LruCache<>((int) (Runtime.getRuntime().maxMemory() / 8));
+        int size = (int) Runtime.getRuntime().maxMemory() / 1024 / 8;
+        memoryCache = new LruCache<>(size);
     }
 
     /**

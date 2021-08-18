@@ -152,18 +152,31 @@ public class Simplicity {
     }
 
     private void setBitmap(BitmapHunter hunterS) {
-        Bitmap bitmap = hunterS.getResult();
-        BitmapDrawable drawable = new BitmapDrawable(bitmap);
+        RequestData data = hunterS.data;
         ImageView iv = hunterS.data.iv;
-        iv.setImageDrawable(drawable);
-        log(hunterS, true);
+        String tag = data.uri != null ?
+                data.uri.toString() : Integer.toString(data.resourceId);
+        if (iv != null && tag.equals(iv.getTag())) {
+            Bitmap bitmap = hunterS.getResult();
+            BitmapDrawable drawable = new BitmapDrawable(bitmap);
+            iv.setImageDrawable(drawable);
+            log(hunterS, true);
+        }
+        CallBack c = data.getCallBack();
+        if (c != null) {
+            c.success(hunterS);
+        }
     }
 
     private void requestFail(BitmapHunter hunterF) {
         RequestData data = hunterF.data;
         ImageView iv = data.iv;
-        if (data.errorDrawable != null) {
+        if (data.errorDrawable != null && iv != null) {
             iv.setImageDrawable(data.errorDrawable);
+        }
+        CallBack c = hunterF.data.getCallBack();
+        if (c != null) {
+            c.fail(hunterF);
         }
         if (failSet != null) {
             failSet.add(hunterF);
@@ -203,6 +216,7 @@ public class Simplicity {
         private MemoryCache memoryCache;
         private List<RequestHandler> requestHandlerList;
         private HashSet<BitmapHunter> failSet;
+        private CallBack callBack;
 
         public Builder(Context context) {
             if (context == null) {
@@ -222,7 +236,7 @@ public class Simplicity {
             }
 
             if (mode == 0) {
-                mode = FIFO;
+                mode = LIFO;
             }
 
             if (batch == 0) {
@@ -256,7 +270,7 @@ public class Simplicity {
 
         public Builder useFailSet(boolean b) {
             if (this.failSet != null) {
-                throw new NullPointerException("不能重复启用请求失败集合");
+                throw new IllegalArgumentException("不能重复启用请求失败集合");
             }
             this.failSet = b ? new HashSet<>() : null;
             return this;

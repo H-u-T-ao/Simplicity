@@ -1,22 +1,36 @@
-package com.fengjiaxing.simplicity;
+package com.fengjiaxing.simplicity.ImagePreview;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.fengjiaxing.picload.BitmapHunter;
+import com.fengjiaxing.picload.CallBack;
+import com.fengjiaxing.picload.Simplicity;
+import com.fengjiaxing.simplicity.MyApplication;
+
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class ImageShowView extends androidx.appcompat.widget.AppCompatImageView
+public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageView
         implements View.OnTouchListener {
 
     private BitmapInfo l;
@@ -25,19 +39,29 @@ public class ImageShowView extends androidx.appcompat.widget.AppCompatImageView
 
     private int index;
 
-    public ImageShowView(Context context) {
+    public ImagePreviewView(Context context) {
         super(context);
         init();
     }
 
-    public ImageShowView(Context context, @Nullable AttributeSet attrs) {
+    public ImagePreviewView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         init();
     }
 
-    public ImageShowView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public ImagePreviewView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
+    }
+
+    @Override
+    public void setImageDrawable(@Nullable Drawable drawable) {
+    }
+
+    private static Bitmap errorBitmap;
+
+    public static void setErrorBitmap(Bitmap errorBitmap) {
+        ImagePreviewView.errorBitmap = errorBitmap;
     }
 
     private int animSpeed = 1;
@@ -95,14 +119,18 @@ public class ImageShowView extends androidx.appcompat.widget.AppCompatImageView
         c.tmx = tmx;
         c.tmy = tmy;
         if (l != null) {
-            setTranslate(tmx - sWidth, l.tmy, matrixL);
-            l.tmx = tmx - sWidth;
+            float tmxL = tmx - sWidth - interval;
+            setTranslate(tmxL, l.tmy, matrixL);
+            l.tmx = tmxL;
         }
         if (n != null) {
-            setTranslate(tmx + nm * c.width, n.tmy, matrixN);
-            n.tmx = tmx + nm * c.width;
+            float tmxN = tmx + nm * c.width + interval;
+            setTranslate(tmxN, n.tmy, matrixN);
+            n.tmx = tmxN;
         }
     }
+
+    private static final int interval = 40;
 
     private void setScale(float m) {
         matrixC.setScale(m, m);
@@ -113,19 +141,38 @@ public class ImageShowView extends androidx.appcompat.widget.AppCompatImageView
         }
         setTranslate(c.tmx, c.tmy, matrixC);
         if (l != null) {
-            l.tmx = c.tmx - sWidth - 8;
+            l.tmx = c.tmx - sWidth - interval;
             setTranslate(l.tmx, l.tmy, matrixL);
         }
         if (n != null) {
-            n.tmx = c.tmx + m * c.width + 8;
+            n.tmx = c.tmx + nm * c.width + interval;
             setTranslate(n.tmx, n.tmy, matrixN);
         }
     }
 
-    private List<Bitmap> bitmapList;
+    private List<WeakReference<Bitmap>> bitmapList;
 
-    public void setBitmapList(List<Bitmap> bitmapList) {
-        this.bitmapList = bitmapList;
+    private List<Uri> uriList;
+
+    public void setBitmapUriList(List<Uri> fileList) {
+        this.uriList = fileList;
+        int s = fileList.size();
+        this.bitmapList = new ArrayList<>();
+        for (int i = 0; i < s; i++) {
+            bitmapList.add(null);
+        }
+    }
+
+    private int cacheSize = 5;
+
+    public void setCacheSize(int cacheSize) {
+        this.cacheSize = cacheSize;
+    }
+
+    private static int beginIndex;
+
+    public void setBeginIndex(int beginIndex) {
+        ImagePreviewView.beginIndex = beginIndex;
     }
 
     private float unitTime = 1000 / 60F;
@@ -152,25 +199,35 @@ public class ImageShowView extends androidx.appcompat.widget.AppCompatImageView
         if (c == null) {
             sWidth = getWidth();
             sHeight = getHeight();
-            index = 0;
-            if (bitmapList.size() >= 2) {
-                Bitmap center = bitmapList.get(0);
-                Bitmap next = bitmapList.get(1);
+            index = beginIndex;
+            loadCachePic();
+            if (errorBitmap == null) {
+                errorBitmap = Bitmap.createBitmap((int) sWidth, (int) sHeight, Bitmap.Config.ARGB_4444);
+                Canvas canvas = new Canvas(errorBitmap);
+                canvas.drawColor(Color.BLACK);
+            }
+            WeakReference<Bitmap> wBitmap;
+            if (index - 1 >= 0) {
+                wBitmap = bitmapList.get(index - 1);
+                Bitmap last = (wBitmap == null) ? null : wBitmap.get();
+                l = new BitmapInfo(last, sWidth, sHeight, BitmapInfo.LAST);
+                matrixL.setScale(l.dm, l.dm);
+                setTranslate(l.tmx, l.tmy, matrixL);
+            }
+            if (index >= 0) {
+                wBitmap = bitmapList.get(index);
+                Bitmap center = (wBitmap == null) ? null : wBitmap.get();
                 c = new BitmapInfo(center, sWidth, sHeight, BitmapInfo.CENTER);
-                n = new BitmapInfo(next, sWidth, sHeight, BitmapInfo.NEXT);
                 matrixC.setScale(c.dm, c.dm);
                 setTranslate(c.tmx, c.tmy, matrixC);
+            }
+            if (index + 1 <= bitmapList.size() - 1) {
+                wBitmap = bitmapList.get(index + 1);
+                Bitmap next = (wBitmap == null) ? null : wBitmap.get();
+                n = new BitmapInfo(next, sWidth, sHeight, BitmapInfo.NEXT);
                 matrixN.setScale(n.dm, n.dm);
                 setTranslate(n.tmx, n.tmy, matrixN);
                 m = nm = c.dm;
-            } else if (bitmapList.size() == 1) {
-                Bitmap center = bitmapList.get(0);
-                c = new BitmapInfo(center, sWidth, sHeight, BitmapInfo.CENTER);
-                matrixC.setScale(c.dm, c.dm);
-                setTranslate(c.tmx, c.tmy, matrixC);
-                m = nm = c.dm;
-            } else {
-                throw new IllegalArgumentException("传入位图集合为空");
             }
         }
     }
@@ -277,12 +334,12 @@ public class ImageShowView extends androidx.appcompat.widget.AppCompatImageView
             case MotionEvent.ACTION_UP:
                 touching = false;
                 if (l != null
-                        && ((l.tmx + sWidth) > (0.4 * sWidth)
-                        || ((l.tmx > -sWidth) && speedX > 10))) {
+                        && ((l.tmx + sWidth) > (0.3 * sWidth)
+                        || ((l.tmx > -sWidth) && speedX > 5))) {
                     changeAnim(false);
                 } else if (n != null
-                        && (n.tmx < (0.6 * sWidth)
-                        || ((n.tmx < sWidth) && speedX < -10))) {
+                        && (n.tmx < (0.7 * sWidth)
+                        || ((n.tmx < sWidth) && speedX < -5))) {
                     changeAnim(true);
                 } else {
                     if (!adjustPosition()) {
@@ -350,36 +407,38 @@ public class ImageShowView extends androidx.appcompat.widget.AppCompatImageView
 
     private void change(boolean next) {
         if (next) {
-            if (bitmapList.size() == index + 2) {
+            if (index + 2 <= bitmapList.size() - 1) {
                 index++;
-                l = c.changePosition(sWidth, sHeight, BitmapInfo.LAST);
-                c = n.changePosition(sWidth, sHeight, BitmapInfo.CENTER);
-                n = null;
-                nm = c.dm;
-            } else if (bitmapList.size() > index + 2) {
-                index++;
-                Bitmap b = bitmapList.get(index + 1);
+                loadCachePic();
+                WeakReference<Bitmap> wBitmap = bitmapList.get(index + 1);
+                Bitmap b = (wBitmap == null) ? null : wBitmap.get();
                 l = c.changePosition(sWidth, sHeight, BitmapInfo.LAST);
                 c = n.changePosition(sWidth, sHeight, BitmapInfo.CENTER);
                 n = new BitmapInfo(b, sWidth, sHeight, BitmapInfo.NEXT);
-                nm = c.dm;
+            } else if (index + 1 == bitmapList.size() - 1) {
+                index++;
+                loadCachePic();
+                l = c.changePosition(sWidth, sHeight, BitmapInfo.LAST);
+                c = n.changePosition(sWidth, sHeight, BitmapInfo.CENTER);
+                n = null;
             } else {
                 return;
             }
         } else {
-            if (index == 1) {
+            if (index - 1 == 0) {
                 index--;
+                loadCachePic();
                 n = c.changePosition(sWidth, sHeight, BitmapInfo.NEXT);
                 c = l.changePosition(sWidth, sHeight, BitmapInfo.CENTER);
                 l = null;
-                nm = c.dm;
-            } else if (index > 1) {
+            } else if (index - 1 > 0) {
                 index--;
-                Bitmap b = bitmapList.get(index - 1);
+                loadCachePic();
+                WeakReference<Bitmap> wBitmap = bitmapList.get(index - 1);
+                Bitmap b = (wBitmap == null) ? null : wBitmap.get();
                 n = c.changePosition(sWidth, sHeight, BitmapInfo.NEXT);
                 c = l.changePosition(sWidth, sHeight, BitmapInfo.CENTER);
                 l = new BitmapInfo(b, sWidth, sHeight, BitmapInfo.LAST);
-                nm = c.dm;
             } else {
                 return;
             }
@@ -396,7 +455,7 @@ public class ImageShowView extends androidx.appcompat.widget.AppCompatImageView
             setTranslate(n.tmx, n.tmy, matrixN);
         }
         postInvalidate();
-        this.setEnabled(true);
+        mainHandler.handleMessage(mainHandler.obtainMessage(ENABLE));
     }
 
     private static float hypotenuse;
@@ -557,6 +616,82 @@ public class ImageShowView extends androidx.appcompat.widget.AppCompatImageView
         return c.tmy <= minY || c.tmy >= maxY;
     }
 
+    private static final int LOAD_PIC = 0;
+    private static final int ENABLE = 1;
+
+    private final Handler mainHandler = new Handler(Looper.getMainLooper()) {
+
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            switch (msg.what) {
+                case LOAD_PIC:
+                    int i = (int) msg.obj;
+                    mainHandler.post(() -> loadPic(i));
+                    break;
+                case ENABLE:
+                    mainHandler.post(() -> setEnabled(true));
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
+
+    private void loadCachePic() {
+        for (int i = 0; i < cacheSize; i++) {
+            int j = ((index - cacheSize / 2) + i);
+            if (j >= 0 && j <= uriList.size() - 1
+                    && (bitmapList.get(j) == null
+                    || (bitmapList.get(j) != null
+                    && bitmapList.get(j).get() == null))) {
+                mainHandler.handleMessage(mainHandler.obtainMessage(LOAD_PIC, j));
+            }
+        }
+    }
+
+    private void loadPic(int index) {
+        Uri uri = uriList.get(index);
+        Simplicity.get(MyApplication.getApplication())
+                .load(uri)
+                .into(new PreviewViewCallBack(index));
+    }
+
+    private class PreviewViewCallBack implements CallBack {
+
+        private final int i;
+
+        private PreviewViewCallBack(int i) {
+            this.i = i;
+        }
+
+        @Override
+        public void success(BitmapHunter hunter) {
+            Bitmap bitmap = hunter.getResult();
+            WeakReference<Bitmap> wBitmap = new WeakReference<>(bitmap);
+            bitmapList.set(i, wBitmap);
+            if (i == index - 1) {
+                l.setBitmap(bitmap, sWidth, sHeight);
+                matrixL.setScale(l.dm, l.dm);
+                setTranslate(l.tmx, l.tmy, matrixL);
+            } else if (i == index) {
+                c.setBitmap(bitmap, sWidth, sHeight);
+                matrixC.setScale(c.dm, c.dm);
+                setTranslate(c.tmx, c.tmy, matrixC);
+                m = nm = c.dm;
+            } else if (i == index + 1) {
+                n.setBitmap(bitmap, sWidth, sHeight);
+                matrixN.setScale(n.dm, n.dm);
+                setTranslate(n.tmx, n.tmy, matrixN);
+            }
+            postInvalidate();
+        }
+
+        @Override
+        public void fail(BitmapHunter hunter) {
+            System.out.println(1);
+        }
+    }
+
     private static class BitmapInfo {
 
         private static final int LAST = -1;
@@ -564,32 +699,38 @@ public class ImageShowView extends androidx.appcompat.widget.AppCompatImageView
         private static final int NEXT = 1;
 
         private BitmapInfo(Bitmap b, float sWidth, float sHeight, int position) {
-            this.b = b;
-            width = b.getWidth();
-            height = b.getHeight();
+            if (b != null) {
+                this.b = b;
+                width = b.getWidth();
+                height = b.getHeight();
+            } else {
+                this.b = ImagePreviewView.errorBitmap;
+                width = errorBitmap.getWidth();
+                height = errorBitmap.getHeight();
+            }
             dm = sWidth / width;
             tmy = (sHeight - height * dm) / 2;
             switch (position) {
                 case LAST:
-                    tmx = -sWidth - 8;
+                    tmx = -sWidth - interval;
                     break;
                 case CENTER:
                     tmx = 0;
                     break;
                 case NEXT:
-                    tmx = sWidth + 8;
+                    tmx = sWidth + interval;
                     break;
                 default:
                     break;
             }
         }
 
-        private final Bitmap b;
+        private Bitmap b;
         // 图片的大小
-        private final float width;
-        private final float height;
+        private float width;
+        private float height;
         // 图片的默认缩放倍率
-        private final float dm;
+        private float dm;
         // 图片左上角的坐标位置
         private float tmx;
         private float tmy;
@@ -597,7 +738,7 @@ public class ImageShowView extends androidx.appcompat.widget.AppCompatImageView
         private BitmapInfo changePosition(float sWidth, float sHeight, int position) {
             switch (position) {
                 case LAST:
-                    tmx = -sWidth - 8;
+                    tmx = -sWidth - interval;
                     tmy = (sHeight - height * dm) / 2;
                     break;
                 case CENTER:
@@ -605,13 +746,27 @@ public class ImageShowView extends androidx.appcompat.widget.AppCompatImageView
                     tmy = (sHeight - height * dm) / 2;
                     break;
                 case NEXT:
-                    tmx = sWidth + 8;
+                    tmx = sWidth + interval;
                     tmy = (sHeight - height * dm) / 2;
                     break;
                 default:
                     break;
             }
             return this;
+        }
+
+        private void setBitmap(Bitmap b, float sWidth, float sHeight) {
+            if (b != null) {
+                this.b = b;
+                width = b.getWidth();
+                height = b.getHeight();
+            } else {
+                this.b = ImagePreviewView.errorBitmap;
+                width = errorBitmap.getWidth();
+                height = errorBitmap.getHeight();
+            }
+            dm = sWidth / width;
+            tmy = (sHeight - height * dm) / 2;
         }
 
     }
