@@ -3,7 +3,7 @@ package com.fengjiaxing.picload;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -16,6 +16,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -25,7 +26,7 @@ import static com.fengjiaxing.picload.Utils.*;
 
 public class Simplicity {
 
-    public static final String TAG = "Simplicity";
+    public static final String TAG = "SIMPLICITY";
 
     public static final String THREAD_NAME_DISPATCHER = "DISPATCHER";
     public static final int THREAD_PRIORITY_BACKGROUND = 10;
@@ -41,8 +42,11 @@ public class Simplicity {
         public void handleMessage(@NonNull Message msg) {
             switch (msg.what) {
                 case REQUEST_SUCCESS:
-                    BitmapHunter hunterS = (BitmapHunter) msg.obj;
-                    hunterS.simplicity.setBitmap(hunterS);
+                    @SuppressWarnings("unchecked")
+                    Set<BitmapHunter> hunterSet = (Set<BitmapHunter>) msg.obj;
+                    for (BitmapHunter hunterS : hunterSet) {
+                        hunterS.simplicity.setBitmap(hunterS);
+                    }
                     break;
                 case REQUEST_FAIL:
                     BitmapHunter hunterF = (BitmapHunter) msg.obj;
@@ -82,7 +86,7 @@ public class Simplicity {
     }
 
     @SuppressLint("StaticFieldLeak")
-    static Simplicity simplicity = null;
+    static volatile Simplicity simplicity = null;
 
     public static Simplicity get(Context context) {
         if (simplicity == null) {
@@ -105,6 +109,16 @@ public class Simplicity {
             }
             simplicity = instance;
         }
+    }
+
+    private boolean shutdown;
+
+    public void shutdown() {
+        if (shutdown) {
+            return;
+        }
+        dispatcher.shutdown();
+        clearMemoryCache();
     }
 
     /**
@@ -158,14 +172,15 @@ public class Simplicity {
                 data.uri.toString() : Integer.toString(data.resourceId);
         if (iv != null && tag.equals(iv.getTag())) {
             Bitmap bitmap = hunterS.getResult();
-            BitmapDrawable drawable = new BitmapDrawable(bitmap);
+            bitmap.prepareToDraw();
+            Drawable drawable = new SimplicityDrawable(context, bitmap);
             iv.setImageDrawable(drawable);
-            log(hunterS, true);
         }
         CallBack c = data.getCallBack();
         if (c != null) {
             c.success(hunterS);
         }
+        // log(hunterS, true);
     }
 
     private void requestFail(BitmapHunter hunterF) {
@@ -181,7 +196,7 @@ public class Simplicity {
         if (failSet != null) {
             failSet.add(hunterF);
         }
-        log(hunterF, false);
+        // log(hunterF, false);
     }
 
     public HashSet<BitmapHunter> getFailSet() {
@@ -210,13 +225,12 @@ public class Simplicity {
 
         private final Context context;
         private ExecutorService service;
-        private int maxNumber;
+        private int corePoolSize;
         private int mode;
-        private int batch;
+        private int stealLimit;
         private MemoryCache memoryCache;
         private List<RequestHandler> requestHandlerList;
         private HashSet<BitmapHunter> failSet;
-        private CallBack callBack;
 
         public Builder(Context context) {
             if (context == null) {
@@ -230,7 +244,7 @@ public class Simplicity {
             Context context = this.context;
 
             if (service == null) {
-                maxNumber = 5;
+                corePoolSize = 5;
                 service = new ThreadPoolExecutor(5, 5,
                         0, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
             }
@@ -239,8 +253,8 @@ public class Simplicity {
                 mode = LIFO;
             }
 
-            if (batch == 0) {
-                batch = 10;
+            if (stealLimit == 0) {
+                stealLimit = Integer.MAX_VALUE;
             }
 
             if (memoryCache == null) {
@@ -257,13 +271,15 @@ public class Simplicity {
                 requestHandlerList.add(new NetWorkRequestHandler());
             }
 
-            Dispatcher dispatcher = new Dispatcher(mainHandler, service, maxNumber, mode, batch);
+            Dispatcher dispatcher = new Dispatcher(mainHandler,
+                    service, corePoolSize,
+                    mode, stealLimit);
 
             return new Simplicity(context, dispatcher, memoryCache,
                     memoryCacheRequestHandler,
                     resourceRequestHandler,
                     requestHandlerList,
-                    service, maxNumber, mode,
+                    service, corePoolSize, mode,
                     failSet);
 
         }
@@ -276,6 +292,18 @@ public class Simplicity {
             return this;
         }
 
+        public Builder setStealLimit(int stealLimit) {
+            if (this.stealLimit != 0) {
+                throw new IllegalStateException("不能重复设置FIFO模式窃取限制");
+            }
+            if (stealLimit <= 0) {
+                throw new IllegalArgumentException("设置的FIFO模式窃取限制不应为非正数");
+            }
+            this.stealLimit = stealLimit;
+
+            return this;
+        }
+
         public Builder setMode(int mode) {
             if (this.mode == FIFO || this.mode == LIFO) {
                 throw new IllegalStateException("不能重复设置加载模式");
@@ -283,7 +311,7 @@ public class Simplicity {
             if (mode == FIFO || mode == LIFO) {
                 this.mode = mode;
             } else {
-                throw new IllegalArgumentException("设置的加载模式参数有误");
+                throw new IllegalArgumentException("设置的加载模式有误");
             }
 
             return this;
@@ -299,7 +327,7 @@ public class Simplicity {
             if (this.service != null) {
                 throw new IllegalStateException("不能重复设置线程服务实现类");
             }
-            this.maxNumber = maxNumber;
+            this.corePoolSize = maxNumber;
             this.service = service;
 
             return this;
@@ -329,15 +357,6 @@ public class Simplicity {
             return this;
         }
 
-        public Builder setBatch(int batch) {
-            if (batch <= 0) {
-                throw new IllegalArgumentException("设置的批处理数不应为非正数");
-            }
-
-            this.batch = batch;
-
-            return this;
-        }
     }
 
 }

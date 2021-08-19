@@ -21,17 +21,6 @@ public class Utils {
         Log.d(TAG, s + hunterInfo + " - SOURCE:" + hunter.getFrom());
     }
 
-    public static void log(BitmapHunter hunter) {
-        RequestData data = hunter.data;
-        String hunterInfo;
-        if (data.uri != null) {
-            hunterInfo = "URI:" + data.uri.toString();
-        } else {
-            hunterInfo = "RESOURCE_ID:" + data.resourceId;
-        }
-        Log.d(TAG, hunterInfo + " - REQUEST_CANCEL");
-    }
-
     public static boolean isMain() {
         return Looper.getMainLooper().getThread() == Thread.currentThread();
     }
@@ -39,12 +28,6 @@ public class Utils {
     public static void checkMain() {
         if (!isMain()) {
             throw new IllegalStateException("方法应该在主线程上执行");
-        }
-    }
-
-    public static void checkNotMain() {
-        if (isMain()) {
-            throw new IllegalStateException("方法不应该主线程上执行");
         }
     }
 

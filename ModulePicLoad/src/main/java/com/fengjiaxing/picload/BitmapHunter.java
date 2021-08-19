@@ -1,7 +1,5 @@
 package com.fengjiaxing.picload;
 
-import static com.fengjiaxing.picload.Utils.*;
-
 import android.graphics.Bitmap;
 import android.os.Handler;
 
@@ -21,7 +19,7 @@ public class BitmapHunter implements Runnable {
     private Bitmap result;
     private String from;
 
-    private Exception exception;
+    public Exception exception;
 
     public BitmapHunter(Simplicity simplicity, Dispatcher dispatcher, RequestData data) {
         this.simplicity = simplicity;
@@ -92,10 +90,6 @@ public class BitmapHunter implements Runnable {
 
     public String getFrom() {
         return from;
-    }
-
-    public Exception getException() {
-        return exception;
     }
 
 }

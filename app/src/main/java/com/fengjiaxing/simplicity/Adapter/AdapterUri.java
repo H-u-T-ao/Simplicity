@@ -1,6 +1,7 @@
 package com.fengjiaxing.simplicity.Adapter;
 
 import android.app.Activity;
+import android.app.ActivityOptions;
 import android.content.Intent;
 import android.net.Uri;
 import android.view.LayoutInflater;
@@ -16,25 +17,19 @@ import com.fengjiaxing.picload.Simplicity;
 import com.fengjiaxing.simplicity.ImagePreview.ImagePreviewActivity;
 import com.fengjiaxing.simplicity.ImageSelectView;
 import com.fengjiaxing.simplicity.R;
-import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
 
     private final Activity activity;
-    private final List<Uri> list;
-    private final int lastLine;
-    private final int totalLine;
+    private final ArrayList<Uri> list;
 
     private RequestBuilder.CompressConfig compressConfig;
 
-    public AdapterUri(Activity activity, List<Uri> list) {
+    public AdapterUri(Activity activity, ArrayList<Uri> list) {
         this.activity = activity;
         this.list = list;
-        this.lastLine = list.size() % 4;
-        this.totalLine = (lastLine == 0) ? (list.size() / 4) : (list.size() / 4 + 1);
     }
 
     @NonNull
@@ -46,44 +41,36 @@ public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull AdapterUri.ViewHolder holder, int position) {
-        if (4 * (position + 1) <= list.size()) {
-            Uri uri1 = list.get(4 * position);
-            Uri uri2 = list.get(4 * position + 1);
-            Uri uri3 = list.get(4 * position + 2);
-            Uri uri4 = list.get(4 * position + 3);
-            loadPic(uri1, holder.iv1);
-            loadPic(uri2, holder.iv2);
-            loadPic(uri3, holder.iv3);
-            loadPic(uri4, holder.iv4);
-        } else {
-            if (lastLine == 1) {
-                Uri uri1 = list.get(4 * position);
-                loadPic(uri1, holder.iv1);
-                loadPic(null, holder.iv2);
-                loadPic(null, holder.iv3);
-                loadPic(null, holder.iv4);
-            } else if (lastLine == 2) {
-                Uri uri1 = list.get(4 * position);
-                Uri uri2 = list.get(4 * position + 1);
-                loadPic(uri1, holder.iv1);
-                loadPic(uri2, holder.iv2);
-                loadPic(null, holder.iv3);
-                loadPic(null, holder.iv4);
-            } else if (lastLine == 3) {
-                Uri uri1 = list.get(4 * position);
-                Uri uri2 = list.get(4 * position + 1);
-                Uri uri3 = list.get(4 * position + 2);
-                loadPic(uri1, holder.iv1);
-                loadPic(uri2, holder.iv2);
-                loadPic(uri3, holder.iv3);
-                loadPic(null, holder.iv4);
-            }
+        Uri uri1 = null;
+        Uri uri2 = null;
+        Uri uri3 = null;
+        Uri uri4 = null;
+        int index1 = 4 * position;
+        int index2 = 4 * position + 1;
+        int index3 = 4 * position + 2;
+        int index4 = 4 * position + 3;
+        if (index1 < list.size()) {
+            uri1 = list.get(4 * position);
         }
+        if (index2 < list.size()) {
+            uri2 = list.get(4 * position + 1);
+        }
+        if (index3 < list.size()) {
+            uri3 = list.get(4 * position + 2);
+        }
+        if (index4 < list.size()) {
+            uri4 = list.get(4 * position + 3);
+        }
+        loadPic(uri1, index1, holder.iv1);
+        loadPic(uri2, index2, holder.iv2);
+        loadPic(uri3, index3, holder.iv3);
+        loadPic(uri4, index4, holder.iv4);
     }
 
     @Override
     public int getItemCount() {
-        return totalLine;
+        int s = list.size();
+        return (s % 4 == 0) ? (s / 4) : (s / 4 + 1);
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
@@ -102,7 +89,14 @@ public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
         }
     }
 
-    private void loadPic(Uri uri, ImageSelectView iv) {
+    /**
+     * RecyclerView加载图片的方法
+     *
+     * @param uri   图片的Uri
+     * @param index 图片的索引
+     * @param iv    图片所属的ImageSelectView
+     */
+    private void loadPic(Uri uri, int index, ImageSelectView iv) {
         if (uri == null) {
             Simplicity.get(activity)
                     .load((Uri) null)
@@ -121,21 +115,29 @@ public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
                         .setErrorDrawable(R.drawable.load_fail)
                         .into(iv);
             }
-            iv.setObj(uri);
+            iv.setUri(uri);
             iv.setOnNormalClickListener(() -> {
                 Intent intent = new Intent(activity, ImagePreviewActivity.class);
-                ArrayList<Uri> uriList = new ArrayList<>();
-                uriList.add(uri);
-                intent.putParcelableArrayListExtra("list", uriList);
-                intent.putExtra("index", 0);
-                activity.startActivity(intent);
+                intent.putParcelableArrayListExtra("list", list);
+                intent.putExtra("index", index);
+                activity.startActivity(intent,
+                        ActivityOptions
+                                .makeSceneTransitionAnimation(
+                                        activity,
+                                        iv,
+                                        "name")
+                                .toBundle());
             });
             iv.setOnLongClickListener(v -> {
                 boolean selectable = ImageSelectView.getSelectable();
                 if (!selectable) {
                     ImageSelectView.setSelectable(true);
-                    iv.select();
-                    Toast.makeText(activity, "返回以退出编辑模式", Toast.LENGTH_LONG).show();
+                    boolean b = iv.selected();
+                    if (b) {
+                        Toast.makeText(activity, "返回以退出选择模式", Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(activity, "已达到选择的最大数量", Toast.LENGTH_LONG).show();
+                    }
                 }
                 return true;
             });
@@ -143,6 +145,11 @@ public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
         }
     }
 
+    /**
+     * 给Simplicity设置图片压缩配置的方法
+     *
+     * @param compressConfig Simplicity图片压缩配置
+     */
     public void setCompressConfig(RequestBuilder.CompressConfig compressConfig) {
         this.compressConfig = compressConfig;
     }

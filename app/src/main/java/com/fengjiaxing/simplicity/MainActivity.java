@@ -1,5 +1,6 @@
 package com.fengjiaxing.simplicity;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -14,8 +15,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.Display;
 import android.view.KeyEvent;
-import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.fengjiaxing.picload.SimplicityCompressConfig;
 import com.fengjiaxing.simplicity.Adapter.AdapterUri;
@@ -27,6 +28,9 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+/**
+ * 主活动MainActivity
+ */
 public class MainActivity extends AppCompatActivity {
 
     public static float refreshRate;
@@ -44,19 +48,25 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // 申请权限
         requestPermission();
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) ==
+                    PackageManager.PERMISSION_GRANTED) {
+                init();
+            }
+        } else {
+            init();
+        }
+    }
+
+    /**
+     * 初始化MainActivity
+     */
+    private void init() {
         RecyclerView list = findViewById(R.id.rv_main_list);
         btnSelectNum = findViewById(R.id.btn_main_select_num);
-
-//        String url = "https://image.9game.cn/2020/10/11/180771437.jpg";
-//        Uri uri = Uri.parse(url);
-//
-//        List<Uri> data = new ArrayList<>();
-//        for (int i = 0; i < 499; i++) {
-//            data.add(uri);
-//        }
-//        AdapterUri adapter = new AdapterUri(this, data);
 
         String path = "/storage/emulated/0/DCIM/Camera";
         getFilesAllName(path);
@@ -77,23 +87,14 @@ public class MainActivity extends AppCompatActivity {
         list.setLayoutManager(linearLayoutManager);
         list.setAdapter(adapter);
 
-        //        btnSelectNum.setOnClickListener(v -> {
-//            Intent intent = new Intent(MainActivity.this, SummaryActivity.class);
-//            startActivity(intent);
-//        });
-
         btnSelectNum.setOnClickListener(v -> {
-            ArrayList<Uri> uriList = new ArrayList<>();
-            List<ImageSelectView> viewList = ImageSelectView.getList();
-            for (int i = 0; i < viewList.size(); i++) {
-                Uri uri = (Uri) viewList.get(i).getObj();
-                uriList.add(uri);
-            }
+            List<Uri> uriList = ImageSelectView.getList();
+            ArrayList<Uri> copy = new ArrayList<>(uriList);
             Intent intent = new Intent(this, ImagePreviewActivity.class);
             if (uriList.size() == 0) {
                 intent.putParcelableArrayListExtra("list", data);
             } else {
-                intent.putParcelableArrayListExtra("list", uriList);
+                intent.putParcelableArrayListExtra("list", copy);
             }
             intent.putExtra("index", 0);
             startActivity(intent);
@@ -112,10 +113,14 @@ public class MainActivity extends AppCompatActivity {
         }, 0, 1);
     }
 
+    /**
+     * 重定向返回键
+     */
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             boolean selectable = ImageSelectView.getSelectable();
+            // 如果正在选择模式下
             if (selectable) {
                 ImageSelectView.clearList();
                 ImageSelectView.setSelectable(false);
@@ -129,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        // 获取设备屏幕刷新率
         Display display = getWindowManager().getDefaultDisplay();
         refreshRate = display.getRefreshRate();
     }
@@ -137,7 +143,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         timer.cancel();
-        timer = null;
     }
 
     @Override
@@ -146,6 +151,9 @@ public class MainActivity extends AppCompatActivity {
         // SimplicityImageView.clearList();
     }
 
+    /**
+     * 获取指定路径的所有文件
+     */
     private void getFilesAllName(String path) {
         File file = new File(path);
         File[] files = file.listFiles();
@@ -156,12 +164,14 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-
     }
 
+    /**
+     * 检查文件是不是图片文件（限于jpg, png, gif, jpeg, bmp）
+     */
     private static boolean checkIsImageFile(String fName) {
         boolean isImageFile = false;
-        //获取拓展名
+        //获取文件拓展名
         String fileEnd = fName.substring(fName.lastIndexOf(".") + 1).toLowerCase();
         if (fileEnd.equals("jpg") || fileEnd.equals("png") || fileEnd.equals("gif")
                 || fileEnd.equals("jpeg") || fileEnd.equals("bmp")) {
@@ -170,6 +180,25 @@ public class MainActivity extends AppCompatActivity {
         return isImageFile;
     }
 
+    /**
+     * 申请权限回调的结果
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == 1024) {
+            if (grantResults.length > 0 &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                init();
+            } else {
+                Toast.makeText(this, "啊这，不给权限用不了的啊", Toast.LENGTH_LONG).show();
+                finish();
+            }
+        }
+    }
+
+    /**
+     * 申请权限
+     */
     private void requestPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (!(ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) ==
