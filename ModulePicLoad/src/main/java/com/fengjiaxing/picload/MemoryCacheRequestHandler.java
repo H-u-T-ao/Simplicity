@@ -2,7 +2,10 @@ package com.fengjiaxing.picload;
 
 import android.graphics.Bitmap;
 
-class MemoryCacheRequestHandler implements RequestHandler{
+/**
+ * 根据key在内存缓存中获取图片的默认策略
+ */
+class MemoryCacheRequestHandler implements RequestHandler {
 
     private static final String SOURCE = "MEMORY_CACHE";
 

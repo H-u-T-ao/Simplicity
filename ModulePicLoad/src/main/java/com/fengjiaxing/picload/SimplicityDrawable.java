@@ -6,6 +6,9 @@ import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.SystemClock;
 
+/**
+ * 这个类只是为了图片的出场动画好看一点而已
+ */
 public class SimplicityDrawable extends BitmapDrawable {
 
     private static final float FADE_TIME = 200F;

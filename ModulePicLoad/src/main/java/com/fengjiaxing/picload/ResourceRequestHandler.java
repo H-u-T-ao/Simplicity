@@ -3,7 +3,10 @@ package com.fengjiaxing.picload;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-public class ResourceRequestHandler implements RequestHandler{
+/**
+ * 根据resourceId在资源文件中获取图片的默认策略
+ */
+public class ResourceRequestHandler implements RequestHandler {
 
     private static final String SOURCE = "RESOURCE";
 

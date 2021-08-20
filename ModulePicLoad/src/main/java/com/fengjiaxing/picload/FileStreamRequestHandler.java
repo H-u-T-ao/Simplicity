@@ -7,6 +7,9 @@ import android.net.Uri;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * 根据Uri在文件或资源文件中获取图片的默认策略
+ */
 public class FileStreamRequestHandler implements RequestHandler {
 
     private static final String SOURCE = "FILE_STREAM | RESOURCE";

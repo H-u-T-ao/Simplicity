@@ -7,6 +7,9 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.widget.ImageView;
 
+/**
+ * 构造请求类，做一些请求前的准备工作
+ */
 public class RequestBuilder {
 
     private final Simplicity simplicity;
@@ -25,6 +28,11 @@ public class RequestBuilder {
         this.data = new RequestData(resourceId);
     }
 
+    /**
+     * 配置图片加载错误时显示的图片
+     *
+     * @param drawable 要显示的图片
+     */
     public RequestBuilder setErrorDrawable(Drawable drawable) {
         if (drawable == null) {
             throw new NullPointerException("设置的加载错误显示图片不应为空指针");
@@ -33,6 +41,11 @@ public class RequestBuilder {
         return this;
     }
 
+    /**
+     * 配置图片加载错误时显示的图片
+     *
+     * @param resourceId 要显示的图片的资源ID
+     */
     public RequestBuilder setErrorDrawable(int resourceId) {
         if (resourceId <= 0) {
             throw new NullPointerException("设置的加载错误显示图片的资源ID不应为非正数");
@@ -42,6 +55,11 @@ public class RequestBuilder {
         return this;
     }
 
+    /**
+     * 配置图片压缩策略
+     *
+     * @param compressConfig 图片压缩策略
+     */
     public RequestBuilder setCompressConfig(CompressConfig compressConfig) {
         if (compressConfig == null) {
             throw new NullPointerException("设置的压缩位图配置不应为空指针");

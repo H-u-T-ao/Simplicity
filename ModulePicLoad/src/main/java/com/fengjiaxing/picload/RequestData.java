@@ -6,19 +6,21 @@ import android.widget.ImageView;
 
 import static com.fengjiaxing.picload.Utils.createMd5Key;
 
+/**
+ * 要请求的图片的信息
+ */
 public class RequestData {
 
     public Uri uri;
     public int resourceId;
 
-    public ImageView iv;
+    public String key;
 
     Drawable errorDrawable;
     private RequestBuilder.CompressConfig compressConfig;
 
+    public ImageView iv;
     private CallBack callBack;
-
-    public String key;
 
     RequestData(Uri uri) {
         this.uri = uri;

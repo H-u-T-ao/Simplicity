@@ -22,8 +22,61 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.fengjiaxing.picload.Utils.*;
-
+/**
+ * @author H-u-T-ao
+ * @since 2021/08/20
+ *
+ * <p>
+ * 注意， {@link Simplicity} 为懒汉式单例模式，不可重复配置哦
+ *
+ * <p>
+ * 注意，请在主线程上执行 {@link Simplicity} 的相关方法哇
+ *
+ * <p>
+ * Simplicity采用构造者模式,可以由其内部类 {@link Simplicity.Builder} 自由配置一些参数,
+ * 其中包括：
+ *
+ * <p>
+ * 1.内存缓存策略。
+ * 通过 {@link Simplicity.Builder#setMemoryCache(MemoryCache)} 方法,
+ * 你可以传入你编辑好的实现了 {@link MemoryCache} 接口的实现类，自定义内存缓存策列。
+ *
+ * <p>
+ * 2.获取图片的策略。
+ * 通过 {@link Simplicity.Builder#setRequestHandlerList(List)} 方法,
+ * 你可以传入你编辑好的实现了 {@link RequestHandler} 接口的实现类的List集合,
+ * 自定义获取图片的策略，稍后将会根据你设置好的策略和顺序依次获取图片。
+ *
+ * <p>
+ * 4.线程池服务。
+ * 通过 {@link Simplicity.Builder#setExecutorService(ExecutorService, int)} 方法,
+ * 你可以传入你自定义参数的线程池。需要注意的是，需要传入一个额外的int类型参数，
+ * 这个参数代表允许 {@link Dispatcher} 同时推送给线程池的最大任务数量。
+ *
+ * <p>
+ * 5.调度者推送任务的模式。
+ * 通过 {@link Simplicity.Builder#setMode(int)} 方法,
+ * 你可以传入你想要的推送任务的模式，可选参数为 {@link Simplicity#FIFO} 和
+ * {@link Simplicity#LIFO} 分别代表先进先出和后进先出。
+ *
+ * <p>
+ * 6.调度者在FIFO模式下的窃取任务限制数。
+ * 通过 {@link Simplicity.Builder#setStealLimit(int)} 方法，
+ * 你可以传入一个int类型参数，设置调度者在FIFO模式下的窃取任务限制数，
+ * 这个参数的实际意义详见 {@link Dispatcher#stealLimit} 。
+ *
+ * <p>
+ * 7.设置是否使用失败任务Set集合。
+ * 通过 {@link Simplicity.Builder#useFailSet(boolean)} 方法，
+ * 你可以决定是否启用失败任务Set集合（默认情况下不启用），
+ * 启用后，你可以调用 {@link Simplicity#getFailSet()} 获取失败任务Set集合
+ *
+ * <p>
+ * 配置完成后，你可以调用 {@link Builder#build()} 方法，
+ * 这个方法将会返回一个 {@link Simplicity} 对象，
+ * 随后调用 {@link Simplicity#setSimplicityInstance(Simplicity)}
+ * 传入 {@link Simplicity} 对象，完成 {@link Simplicity} 的配置
+ */
 public class Simplicity {
 
     public static final String TAG = "SIMPLICITY";
@@ -31,11 +84,11 @@ public class Simplicity {
     public static final String THREAD_NAME_DISPATCHER = "DISPATCHER";
     public static final int THREAD_PRIORITY_BACKGROUND = 10;
 
-    public static final int FIFO = 101;
-    public static final int LIFO = 102;
-
     public static final int REQUEST_SUCCESS = 1;
     public static final int REQUEST_FAIL = 2;
+
+    public static final int FIFO = 101;
+    public static final int LIFO = 102;
 
     static final Handler mainHandler = new Handler(Looper.getMainLooper()) {
         @Override
@@ -345,7 +398,7 @@ public class Simplicity {
             return this;
         }
 
-        public Builder setMemoryCache(SimplicityMemoryCache memoryCache) {
+        public Builder setMemoryCache(MemoryCache memoryCache) {
             if (memoryCache == null) {
                 throw new NullPointerException("设置的内存缓存实现类不应为空");
             }

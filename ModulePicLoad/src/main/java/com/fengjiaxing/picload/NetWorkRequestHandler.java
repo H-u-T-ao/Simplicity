@@ -9,6 +9,9 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+/**
+ * 根据Uri在网络中中获取图片的默认策略
+ */
 public class NetWorkRequestHandler implements RequestHandler {
 
     private static final String SOURCE = "NETWORK";

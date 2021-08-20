@@ -182,13 +182,16 @@ public class ImageSelectView extends androidx.appcompat.widget.AppCompatImageVie
         }
     }
 
+    /**
+     * 选择和取消选择时的回调接口
+     */
     public interface OnSelectedListener {
         void onSelected(ImageSelectView view);
 
         void onUnSelected(ImageSelectView view);
     }
 
-    public void setOnSelectCancelListener(OnSelectedListener listener) {
+    public void setOnSelectedListener(OnSelectedListener listener) {
         this.onSelectedListener = listener;
     }
 
@@ -231,7 +234,7 @@ public class ImageSelectView extends androidx.appcompat.widget.AppCompatImageVie
     }
 
     /**
-     * 获取已被选择的ImageSelectView的总数
+     * 获取已被选择的Uri的总数
      */
     public static int getSelectedCount() {
         return list.size();
@@ -252,12 +255,17 @@ public class ImageSelectView extends androidx.appcompat.widget.AppCompatImageVie
     }
 
     /**
-     * 设置选择模式
+     * 开启/关闭选择模式
+     *
+     * @param selectable 开启/关闭
      */
     public static void setSelectable(boolean selectable) {
         ImageSelectView.selectable = selectable;
     }
 
+    /**
+     * 给当前ImageSelectView设置Uri标识
+     */
     public void setUri(Uri uri) {
         this.uri = uri;
     }

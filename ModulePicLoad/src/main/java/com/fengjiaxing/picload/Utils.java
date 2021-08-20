@@ -7,6 +7,9 @@ import android.util.Log;
 
 import java.security.MessageDigest;
 
+/**
+ * 我只是一个单纯的工具类
+ */
 public class Utils {
 
     public static void log(BitmapHunter hunter, boolean b) {
