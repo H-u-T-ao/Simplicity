@@ -1,5 +1,6 @@
 package com.fengjiaxing.simplicity;
 
+import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
@@ -16,9 +17,9 @@ public class PictureGetter {
                 .query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                         null, null, null, null);
         while (cursor.moveToNext()) {
-            byte[] data = cursor.getBlob(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
-            File file = new File(new String(data, 0, data.length - 1));
-            list.add(Uri.fromFile(file));
+            long id = cursor.getLong(cursor.getColumnIndex(MediaStore.Files.FileColumns._ID));
+            Uri uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id);
+            list.add(uri);
         }
         cursor.close();
         return list;

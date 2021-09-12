@@ -58,7 +58,7 @@ public class BitmapHunter implements Runnable {
             result = hunt();
         } catch (Exception e) {
             this.exception = e;
-            // e.printStackTrace();
+            e.printStackTrace();
         }
         dispatcherHandler.sendMessage(dispatcherHandler.obtainMessage(Dispatcher.TASK_COMPLETE, this));
     }
