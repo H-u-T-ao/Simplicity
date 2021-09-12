@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:background="@color/black">
 
-    <com.fengjiaxing.simplicity.ImagePreview.ImagePreviewView
+    <com.fengjiaxing.simplicity.PreviewView
         android:id="@+id/isv_image_show"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
@@ -14,11 +14,19 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="40dp"
         android:background="@color/app_transparent"
         android:text="0 / 0"
         android:textColor="@color/white"
         android:textSize="24sp"
         android:textStyle="bold" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/list_image_preview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:fitsSystemWindows="true"
+        android:visibility="gone" />
 
 </RelativeLayout>

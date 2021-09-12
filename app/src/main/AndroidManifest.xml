@@ -15,7 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Simplicity">
         <activity
-            android:name=".ImagePreview.ImagePreviewActivity"
+            android:name=".PreviewActivity"
             android:exported="true" />
         <activity
             android:name=".MainActivity"

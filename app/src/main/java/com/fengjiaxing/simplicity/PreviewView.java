@@ -1,4 +1,4 @@
-package com.fengjiaxing.simplicity.ImagePreview;
+package com.fengjiaxing.simplicity;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -7,11 +7,11 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -22,10 +22,10 @@ import androidx.annotation.Nullable;
 import com.fengjiaxing.picload.BitmapHunter;
 import com.fengjiaxing.picload.CallBack;
 import com.fengjiaxing.picload.Simplicity;
-import com.fengjiaxing.simplicity.SimplicityApplication;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -33,8 +33,12 @@ import java.util.TimerTask;
 /**
  * 图片预览ImagePreviewView
  */
-public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageView
+public class PreviewView extends androidx.appcompat.widget.AppCompatImageView
         implements View.OnTouchListener {
+
+    private static final int LAST = -1;
+    private static final int CENTER = 0;
+    private static final int NEXT = 1;
 
     /**
      * 上一张图片的信息{@link BitmapInfo}
@@ -54,36 +58,34 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
      */
     private int index;
 
-    public ImagePreviewView(Context context) {
+    public PreviewView(Context context) {
         super(context);
+        errorBitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_4444);
+        Canvas canvas = new Canvas(errorBitmap);
+        canvas.drawColor(Color.BLACK);
         init();
     }
 
-    public ImagePreviewView(Context context, @Nullable AttributeSet attrs) {
+    public PreviewView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
+        errorBitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_4444);
+        Canvas canvas = new Canvas(errorBitmap);
+        canvas.drawColor(Color.BLACK);
         init();
     }
 
-    public ImagePreviewView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public PreviewView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        errorBitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_4444);
+        Canvas canvas = new Canvas(errorBitmap);
+        canvas.drawColor(Color.BLACK);
         init();
     }
 
-    @Override
-    public void setImageDrawable(@Nullable Drawable drawable) {
-    }
-
     /**
-     * 加载中或加载失败时显示的图片 {@link ImagePreviewView#setErrorBitmap(Bitmap)}
+     * 加载中或加载失败时显示的图片
      */
-    private static Bitmap errorBitmap;
-
-    /**
-     * 设置加载中或加载失败时显示的图片
-     */
-    public void setErrorBitmap(Bitmap errorBitmap) {
-        ImagePreviewView.errorBitmap = errorBitmap;
-    }
+    private final Bitmap errorBitmap;
 
     /**
      * 动画速度倍率，建议设置整数
@@ -126,6 +128,32 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
     }
 
     /**
+     * 重置越界
+     */
+    private void resetCross(float fm) {
+        float minX = sWidth - fm * c.width;
+        float maxX = 0;
+        if (c.tmx < minX) {
+            c.tmx = minX;
+        } else {
+            c.tmx = Math.min(c.tmx, maxX);
+        }
+        float minY;
+        float maxY;
+        if (c.height * fm < getHeight()) {
+            maxY = minY = (sHeight - c.height * fm) / 2;
+        } else {
+            minY = sHeight - c.height * fm;
+            maxY = 0;
+        }
+        if (c.tmy < minY) {
+            c.tmy = minY;
+        } else {
+            c.tmy = Math.min(c.tmy, maxY);
+        }
+    }
+
+    /**
      * 控制特定图片的平移
      *
      * @param tmx    平移的目的地的X轴坐标
@@ -154,18 +182,14 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
         matrixC.setValues(values);
         c.tmx = c.tmx + moveX;
         c.tmy = c.tmy + moveY;
-        if (l != null) {
-            matrixL.getValues(values);
-            values[2] = values[2] + moveX;
-            matrixL.setValues(values);
-            l.tmx = l.tmx + moveX;
-        }
-        if (n != null) {
-            matrixN.getValues(values);
-            values[2] = values[2] + moveX;
-            matrixN.setValues(values);
-            n.tmx = n.tmx + moveX;
-        }
+        matrixL.getValues(values);
+        values[2] = values[2] + moveX;
+        matrixL.setValues(values);
+        l.tmx = l.tmx + moveX;
+        matrixN.getValues(values);
+        values[2] = values[2] + moveX;
+        matrixN.setValues(values);
+        n.tmx = n.tmx + moveX;
     }
 
     /**
@@ -178,16 +202,12 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
         setTranslate(tmx, tmy, matrixC);
         c.tmx = tmx;
         c.tmy = tmy;
-        if (l != null) {
-            float tmxL = tmx - sWidth - interval;
-            setTranslate(tmxL, l.tmy, matrixL);
-            l.tmx = tmxL;
-        }
-        if (n != null) {
-            float tmxN = tmx + nm * c.width + interval;
-            setTranslate(tmxN, n.tmy, matrixN);
-            n.tmx = tmxN;
-        }
+        float tmxL = tmx - sWidth - interval;
+        setTranslate(tmxL, l.tmy, matrixL);
+        l.tmx = tmxL;
+        float tmxN = tmx + nm * c.width + interval;
+        setTranslate(tmxN, n.tmy, matrixN);
+        n.tmx = tmxN;
     }
 
     /**
@@ -195,24 +215,20 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
      * <p>
      * 根据用户的触摸位置进行缩放，达到跟手效果
      *
-     * @param m 缩放倍率
+     * @param fm 缩放倍率
      */
-    private void setScale(float m) {
-        matrixC.setScale(m, m);
+    private void setScale(float fm) {
+        matrixC.setScale(fm, fm);
         // 计算应该移动的距离
-        if (nm != c.dm) {
-            c.tmx = adx - m * rdx;
-            c.tmy = ady - m * rdy;
-        }
+        c.tmx = adx - fm * rdx;
+        c.tmy = ady - fm * rdy;
+        resetCross(fm);
         setTranslate(c.tmx, c.tmy, matrixC);
-        if (l != null) {
-            l.tmx = c.tmx - sWidth - interval;
-            setTranslate(l.tmx, l.tmy, matrixL);
-        }
-        if (n != null) {
-            n.tmx = c.tmx + nm * c.width + interval;
-            setTranslate(n.tmx, n.tmy, matrixN);
-        }
+        l.tmx = c.tmx - sWidth - interval;
+        setTranslate(l.tmx, l.tmy, matrixL);
+        n.tmx = c.tmx + fm * c.width + interval;
+        setTranslate(n.tmx, n.tmy, matrixN);
+        nm = fm;
     }
 
     /**
@@ -221,40 +237,62 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
     private List<WeakReference<Bitmap>> bitmapList;
 
     /**
-     * 要加载图片的Uri列表 {@link ImagePreviewView#setBitmapUriList(List)}
+     * 要加载图片的Uri列表 {@link PreviewView#setBitmapUriList(List)}
      */
     private List<Uri> uriList;
 
     /**
      * 设置要加载图片的Uri列表
      *
-     * @param fileList 要加载图片的Uri列表
+     * @param picList 要加载图片的Uri列表
      */
-    public void setBitmapUriList(List<Uri> fileList) {
-        this.uriList = fileList;
-        int s = fileList.size();
+    public void setBitmapUriList(List<Uri> picList) {
+        this.uriList = picList;
+        int s = picList.size();
         this.bitmapList = new ArrayList<>();
         for (int i = 0; i < s; i++) {
             bitmapList.add(null);
         }
     }
 
-    /**
-     * 预加载图片数 {@link ImagePreviewView#setPreSize(int)}
-     */
-    private int preSize = 5;
+    void swapList(int from, int to) {
+        Collections.swap(bitmapList, from, to);
+    }
 
-    /**
-     * 设置预加载图片数
-     *
-     * @param preSize 预加载图片数
-     */
-    public void setPreSize(int preSize) {
-        this.preSize = preSize;
+    void swapFinish(int from, int to) {
+        if (index == from) {
+            index = to;
+            if (onPictureChangeListener != null) {
+                onPictureChangeListener.change(index);
+            }
+        } else if (index == to) {
+            index = from;
+            if (onPictureChangeListener != null) {
+                onPictureChangeListener.change(index);
+            }
+        }
+        initBitmapInfo();
     }
 
     /**
-     * 最开始展示的图片在列表中的索引 {@link ImagePreviewView#setBeginIndex(int)}
+     * 预加载图片数
+     */
+    private int preSize = 4;
+
+    /**
+     * 设置预加载图片数
+     */
+    public void setPreSize(int size) {
+        if (size < 0) {
+            throw new IllegalArgumentException("设置的预加载图片数不能为负数");
+        } else if (size % 2 == 1) {
+            throw new IllegalArgumentException("预加载图片数应为偶数");
+        }
+        preSize = size;
+    }
+
+    /**
+     * 最开始展示的图片在列表中的索引 {@link PreviewView#setBeginIndex(int)}
      */
     private static int beginIndex;
 
@@ -264,21 +302,21 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
      * @param beginIndex 最开始展示的图片在列表中的索引
      */
     public void setBeginIndex(int beginIndex) {
-        ImagePreviewView.beginIndex = beginIndex;
+        PreviewView.beginIndex = beginIndex;
     }
 
     /**
-     * 动画帧数 {@link ImagePreviewView#setRefreshRate(float)}
+     * 动画帧数 {@link PreviewView#setRefreshRate(int)}
      */
-    private float unitTime = 1000 / 60F;
+    private long unitTime = 800 / 60;
 
     /**
      * 设置动画帧数
      *
      * @param refreshRate 刷新率
      */
-    public void setRefreshRate(float refreshRate) {
-        this.unitTime = (long) (1000 / refreshRate);
+    public void setRefreshRate(int refreshRate) {
+        this.unitTime = 800 / refreshRate;
     }
 
     @Override
@@ -298,47 +336,30 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         // super.onLayout(changed, left, top, right, bottom);
+        if (c == null) {
+            index = beginIndex;
+            sWidth = getWidth();
+            sHeight = getHeight();
+            initBitmapInfo();
+        }
+    }
+
+    public void setIndex(int i) {
+        index = i;
         initBitmapInfo();
+        if (onPictureChangeListener != null) {
+            onPictureChangeListener.change(index);
+        }
     }
 
     /**
      * 初始化图片信息
      */
     private void initBitmapInfo() {
-        if (c == null) {
-            sWidth = getWidth();
-            sHeight = getHeight();
-            index = beginIndex;
-            loadPrePic();
-            if (errorBitmap == null) {
-                errorBitmap = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_4444);
-                Canvas canvas = new Canvas(errorBitmap);
-                canvas.drawColor(Color.BLACK);
-            }
-            WeakReference<Bitmap> wBitmap;
-            if (index - 1 >= 0) {
-                wBitmap = bitmapList.get(index - 1);
-                Bitmap last = (wBitmap == null) ? null : wBitmap.get();
-                l = new BitmapInfo(last, sWidth, sHeight, BitmapInfo.LAST);
-                matrixL.setScale(l.dm, l.dm);
-                setTranslate(l.tmx, l.tmy, matrixL);
-            }
-            if (index >= 0) {
-                wBitmap = bitmapList.get(index);
-                Bitmap center = (wBitmap == null) ? null : wBitmap.get();
-                c = new BitmapInfo(center, sWidth, sHeight, BitmapInfo.CENTER);
-                matrixC.setScale(c.dm, c.dm);
-                setTranslate(c.tmx, c.tmy, matrixC);
-            }
-            if (index + 1 <= bitmapList.size() - 1) {
-                wBitmap = bitmapList.get(index + 1);
-                Bitmap next = (wBitmap == null) ? null : wBitmap.get();
-                n = new BitmapInfo(next, sWidth, sHeight, BitmapInfo.NEXT);
-                matrixN.setScale(n.dm, n.dm);
-                setTranslate(n.tmx, n.tmy, matrixN);
-                m = nm = c.dm;
-            }
-        }
+        l = new BitmapInfo(null, LAST);
+        c = new BitmapInfo(null, CENTER);
+        n = new BitmapInfo(null, NEXT);
+        loadPrePic();
     }
 
     /**
@@ -347,12 +368,8 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
     @Override
     protected void onDraw(Canvas canvas) {
         canvas.drawBitmap(c.b, matrixC, paint);
-        if (l != null) {
-            canvas.drawBitmap(l.b, matrixL, paint);
-        }
-        if (n != null) {
-            canvas.drawBitmap(n.b, matrixN, paint);
-        }
+        canvas.drawBitmap(l.b, matrixL, paint);
+        canvas.drawBitmap(n.b, matrixN, paint);
     }
 
 
@@ -417,83 +434,20 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
      * 图片平移缩放的一系列手势逻辑控制
      */
     @Override
-    public final boolean onTouch(View v, MotionEvent event) {
+    public final boolean onTouch(View v, @NonNull MotionEvent event) {
         int action = event.getActionMasked();
         switch (action) {
             case MotionEvent.ACTION_DOWN:
-                touching = true;
-                if (timerA != null) {
-                    timerA.cancel();
-                }
-                if (timerI != null) {
-                    timerI.cancel();
-                }
-                x = event.getX();
-                y = event.getY();
+                down(event);
                 break;
             case MotionEvent.ACTION_POINTER_DOWN:
-                if (event.getPointerCount() == 2) {
-                    m = nm;
-                    float x = event.getX(0) - event.getX(1);
-                    float y = event.getY(0) - event.getY(1);
-                    d = (float) Math.sqrt(x * x + y * y);
-                    adx = (event.getX(0) + event.getX(1)) / 2;
-                    ady = (event.getY(0) + event.getY(1)) / 2;
-                    // 计算标准焦点的相对坐标
-                    rdx = (adx - c.tmx) / m;
-                    rdy = (ady - c.tmy) / m;
-                }
+                pointerDown(event);
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (event.getPointerCount() == 1) {
-                    if (su) {
-                        su = false;
-                        x = event.getX();
-                        y = event.getY();
-                    }
-                    float nx = event.getX();
-                    float ny = event.getY();
-                    // 计算要移动的位移
-                    float moveX = nx - x;
-                    float moveY = ny - y;
-                    postTranslate(moveX, moveY);
-                    postInvalidate();
-                    x = nx;
-                    y = ny;
-                    speedX = moveX;
-                    speedY = moveY;
-                } else if (event.getPointerCount() == 2) {
-                    // 实时计算焦点的绝对坐标，达到跟随效果
-                    adx = (event.getX(0) + event.getX(1)) / 2;
-                    ady = (event.getY(0) + event.getY(1)) / 2;
-
-                    float ndx = event.getX(0) - event.getX(1);
-                    float ndy = event.getY(0) - event.getY(1);
-                    float nd = (float) Math.sqrt(ndx * ndx + ndy * ndy);
-                    float newNm = (nd / d) * m;
-
-                    if (newNm > (0.9 * c.dm)) {
-                        nm = newNm;
-                    }
-                    setScale(nm);
-                    postInvalidate();
-                }
+                move(event);
                 break;
             case MotionEvent.ACTION_UP:
-                touching = false;
-                if (l != null
-                        && ((l.tmx + sWidth) > (0.3 * sWidth)
-                        || ((l.tmx > -sWidth) && speedX > 5))) {
-                    changeAnim(false);
-                } else if (n != null
-                        && (n.tmx < (0.7 * sWidth)
-                        || ((n.tmx < sWidth) && speedX < -5))) {
-                    changeAnim(true);
-                } else {
-                    if (!adjustPosition()) {
-                        inertialMovement();
-                    }
-                }
+                up(event);
                 break;
             case MotionEvent.ACTION_POINTER_UP:
                 if (event.getPointerCount() == 2) {
@@ -506,6 +460,176 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
         return true;
     }
 
+    private void down(@NonNull MotionEvent event) {
+        touching = true;
+        x = event.getX();
+        y = event.getY();
+    }
+
+    private void pointerDown(@NonNull MotionEvent event) {
+        if (event.getPointerCount() == 2) {
+            m = nm;
+            float x = event.getX(0) - event.getX(1);
+            float y = event.getY(0) - event.getY(1);
+            d = (float) Math.sqrt(x * x + y * y);
+            adx = (event.getX(0) + event.getX(1)) / 2;
+            ady = (event.getY(0) + event.getY(1)) / 2;
+            // 计算标准焦点的相对坐标
+            rdx = (adx - c.tmx) / m;
+            rdy = (ady - c.tmy) / m;
+        }
+    }
+
+    private void move(@NonNull MotionEvent event) {
+        if (event.getPointerCount() == 1) {
+            if (su) {
+                su = false;
+                x = event.getX();
+                y = event.getY();
+            }
+            float nx = event.getX();
+            float ny = event.getY();
+            // 计算要移动的位移
+            float moveX = nx - x;
+            float moveY = ny - y;
+            float minY;
+            float maxY;
+            if (c.height * nm < getHeight()) {
+                maxY = minY = (sHeight - c.height * nm) / 2;
+            } else {
+                minY = sHeight - c.height * nm;
+                maxY = 0;
+            }
+            if (c.tmy < minY || c.tmy > maxY) {
+                moveY = 0;
+            }
+            postTranslate(moveX, moveY);
+            postInvalidate();
+            x = nx;
+            y = ny;
+            speedX = moveX;
+            speedY = moveY;
+            totalMoveX = totalMoveX + moveX;
+            totalMoveY = totalMoveY + moveY;
+        } else if (event.getPointerCount() == 2) {
+            // 实时计算焦点的绝对坐标，达到跟随效果
+            adx = (event.getX(0) + event.getX(1)) / 2;
+            ady = (event.getY(0) + event.getY(1)) / 2;
+            float ndx = event.getX(0) - event.getX(1);
+            float ndy = event.getY(0) - event.getY(1);
+            float nd = (float) Math.sqrt(ndx * ndx + ndy * ndy);
+            float newNm = (nd / d) * m;
+            if (newNm < c.dm) {
+                newNm = c.dm;
+                ToastUtil.showToast(getContext(), "不能再小啦QAQ");
+            } else if (newNm > 4 * c.width / sWidth) {
+                newNm = Math.max(c.dm, 4 * c.width / sWidth);
+                ToastUtil.showToast(getContext(), "不能再大啦QAQ");
+            }
+            setScale(newNm);
+            postInvalidate();
+        }
+    }
+
+    private float firstX;
+    private float firstY;
+
+    private float totalMoveX;
+    private float totalMoveY;
+    private float totalMove;
+
+    private int count;
+    private long firstClick;
+
+    private void up(MotionEvent event) {
+        touching = false;
+        count++;
+        if (count == 1) {
+            totalMove = (float) Math.sqrt(totalMoveX * totalMoveX + totalMoveY * totalMoveY);
+            firstX = event.getX();
+            firstY = event.getY();
+            firstClick = SystemClock.uptimeMillis();
+        } else if (count == 2) {
+            long secondClick = SystemClock.uptimeMillis();
+            float secondX = event.getX();
+            float secondY = event.getY();
+            if (secondClick - firstClick < 300L
+                    && totalMove < 1
+                    && Math.abs(firstX - secondX) < sWidth / 10
+                    && Math.abs(firstY - secondY) < sWidth / 10) {
+                adx = event.getX();
+                ady = event.getY();
+                rdx = (adx - c.tmx) / nm;
+                rdy = (ady - c.tmy) / nm;
+                float newNm;
+                if (nm == c.dm) {
+                    newNm = 2 * c.dm;
+                    if (newNm > 4 * c.width / sWidth) {
+                        newNm = Math.max(c.dm, 4 * c.width / sWidth);
+                    }
+                } else {
+                    newNm = c.dm;
+                }
+                scaleAuto(newNm);
+                count = 0;
+                firstClick = 0;
+                return;
+            } else {
+                count = 1;
+                totalMove = (float) Math.sqrt(totalMoveX * totalMoveX + totalMoveY * totalMoveY);
+                firstX = event.getX();
+                firstY = event.getY();
+                firstClick = secondClick;
+            }
+        }
+        totalMoveX = totalMoveY = 0;
+        if (index - 1 >= 0
+                && (l.tmx + sWidth > 0.3 * sWidth
+                || l.tmx > -sWidth && speedX > 3)) {
+            changeAnim(false);
+        } else if (index + 1 < uriList.size()
+                && (n.tmx < (0.7 * sWidth)
+                || ((n.tmx < sWidth) && speedX < -3))) {
+            changeAnim(true);
+        } else {
+            if (!adjustPosition()) {
+                inertialMovement();
+            }
+        }
+    }
+
+    private static int numS;
+
+    /**
+     * 双击缩放动画效果
+     */
+    private void scaleAuto(float m) {
+        numS = 0;
+        Timer timerS = new Timer();
+        float moveM = animSpeed * (m - nm) / unitTime;
+        timerS.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (touching) {
+                    setScale(m);
+                    timerS.cancel();
+                }
+                if (numS < unitTime / animSpeed) {
+                    nm = nm + moveM;
+                    if (nm < c.dm) {
+                        nm = c.dm;
+                    }
+                    setScale(nm);
+                    postInvalidate();
+                    numS++;
+                } else {
+                    setScale(m);
+                    timerS.cancel();
+                }
+            }
+        }, 0, (long) unitTime / animSpeed);
+    }
+
     /**
      * 切换图片时的图片切换动画效果（自动归位）
      */
@@ -513,47 +637,26 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
         this.setEnabled(false);
         num = 0;
         Timer timerAnim = new Timer();
-        if (next) {
-            float moveX = animSpeed * (0 - n.tmx) / unitTime;
-            float moveY = animSpeed * (((sHeight - nm * c.height) / 2) - c.tmy) / unitTime;
-            timerAnim.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    if (touching) {
-                        change(true);
-                        timerAnim.cancel();
-                    }
-                    if (num < unitTime / animSpeed) {
-                        postTranslate(moveX, moveY);
-                        postInvalidate();
-                        num++;
-                    } else {
-                        change(true);
-                        timerAnim.cancel();
-                    }
+        float moveX = next ?
+                animSpeed * (0 - n.tmx) / unitTime
+                : animSpeed * (0 - l.tmx) / unitTime;
+        timerAnim.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (touching) {
+                    change(next);
+                    timerAnim.cancel();
                 }
-            }, 0, (long) unitTime / animSpeed);
-        } else {
-            float moveX = animSpeed * (0 - l.tmx) / unitTime;
-            float moveY = animSpeed * (((sHeight - nm * c.height) / 2) - c.tmy) / unitTime;
-            timerAnim.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    if (touching) {
-                        change(false);
-                        timerAnim.cancel();
-                    }
-                    if (num < unitTime / animSpeed) {
-                        postTranslate(moveX, moveY);
-                        postInvalidate();
-                        num++;
-                    } else {
-                        change(false);
-                        timerAnim.cancel();
-                    }
+                if (num < unitTime / animSpeed) {
+                    postTranslate(moveX, 0);
+                    postInvalidate();
+                    num++;
+                } else {
+                    change(next);
+                    timerAnim.cancel();
                 }
-            }, 0, (long) unitTime / animSpeed);
-        }
+            }
+        }, 0, (long) unitTime / animSpeed);
     }
 
     /**
@@ -561,66 +664,16 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
      */
     private void change(boolean next) {
         if (next) {
-            if (index + 2 <= bitmapList.size() - 1) {
-                index++;
-                loadPrePic();
-                WeakReference<Bitmap> wBitmap = bitmapList.get(index + 1);
-                Bitmap b = (wBitmap == null) ? null : wBitmap.get();
-                l = c.changePosition(sWidth, sHeight, BitmapInfo.LAST);
-                c = n.changePosition(sWidth, sHeight, BitmapInfo.CENTER);
-                n = new BitmapInfo(b, sWidth, sHeight, BitmapInfo.NEXT);
-                if (onPictureChangeListener != null) {
-                    onPictureChangeListener.onChangeNext(index);
-                }
-            } else if (index + 1 == bitmapList.size() - 1) {
-                index++;
-                loadPrePic();
-                l = c.changePosition(sWidth, sHeight, BitmapInfo.LAST);
-                c = n.changePosition(sWidth, sHeight, BitmapInfo.CENTER);
-                n = null;
-                if (onPictureChangeListener != null) {
-                    onPictureChangeListener.onChangeNext(index);
-                }
-            } else {
-                return;
-            }
+            n.reset(NEXT);
+            index++;
         } else {
-            if (index - 1 == 0) {
-                index--;
-                loadPrePic();
-                n = c.changePosition(sWidth, sHeight, BitmapInfo.NEXT);
-                c = l.changePosition(sWidth, sHeight, BitmapInfo.CENTER);
-                l = null;
-                if (onPictureChangeListener != null) {
-                    onPictureChangeListener.onChangeLast(index);
-                }
-            } else if (index - 1 > 0) {
-                index--;
-                loadPrePic();
-                WeakReference<Bitmap> wBitmap = bitmapList.get(index - 1);
-                Bitmap b = (wBitmap == null) ? null : wBitmap.get();
-                n = c.changePosition(sWidth, sHeight, BitmapInfo.NEXT);
-                c = l.changePosition(sWidth, sHeight, BitmapInfo.CENTER);
-                l = new BitmapInfo(b, sWidth, sHeight, BitmapInfo.LAST);
-                if (onPictureChangeListener != null) {
-                    onPictureChangeListener.onChangeLast(index);
-                }
-            } else {
-                return;
-            }
+            l.reset(LAST);
+            index--;
         }
-        matrixC.setScale(c.dm, c.dm);
-        setTranslate(c.tmx, c.tmy, matrixC);
-        m = nm = c.dm;
-        if (l != null) {
-            matrixL.setScale(l.dm, l.dm);
-            setTranslate(l.tmx, l.tmy, matrixL);
+        loadPrePic();
+        if (onPictureChangeListener != null) {
+            onPictureChangeListener.change(index);
         }
-        if (n != null) {
-            matrixN.setScale(n.dm, n.dm);
-            setTranslate(n.tmx, n.tmy, matrixN);
-        }
-        postInvalidate();
         mainHandler.handleMessage(mainHandler.obtainMessage(ENABLE));
     }
 
@@ -633,9 +686,7 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
      * 更换图片监听接口
      */
     public interface OnPictureChangeListener {
-        void onChangeLast(int index);
-
-        void onChangeNext(int index);
+        void change(int index);
     }
 
     /**
@@ -665,22 +716,21 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
      * 松手前最后一次手指挪动方向的余弦值（以X轴正方向为零角）
      */
     private static float cos;
-    /**
-     * 用于控制惯性运动的计时器
-     */
-    private Timer timerI;
 
     /**
      * 松手后的惯性运动
      */
     private void inertialMovement() {
         hypotenuse = (float) Math.sqrt(speedX * speedX + speedY * speedY);
-        if (hypotenuse == 0) return;
+        if (hypotenuse == 0) {
+            return;
+        }
+        hypotenuse = Math.min(50, hypotenuse);
         sin = speedY / hypotenuse;
         cos = speedX / hypotenuse;
         speedX = 0;
         speedY = 0;
-        timerI = new Timer();
+        Timer timerI = new Timer();
         timerI.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -690,10 +740,8 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
                 if (hypotenuse > 0) {
                     float endX = c.tmx + cos * hypotenuse;
                     float endY = c.tmy + sin * hypotenuse;
-                    boolean bx = crossBoundaryX();
-                    boolean by = crossBoundaryY();
                     // 如果X越界，则重新设置X位置
-                    if (bx) {
+                    if (crossBoundaryX()) {
                         // 如果是左越界，即左边存在黑条
                         if (endX >= maxX) {
                             endX = maxX;
@@ -703,7 +751,7 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
                         }
                     }
                     // 如果Y越界，则重新设置Y位置
-                    if (by) {
+                    if (crossBoundaryY()) {
                         // 如果是上越界，即上边存在黑条
                         if (endY >= maxY) {
                             endY = maxY;
@@ -715,19 +763,16 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
                     homingAll(endX, endY);
                     postInvalidate();
 
-                    hypotenuse = hypotenuse - animSpeed * 5 / unitTime;
+                    hypotenuse =
+                            hypotenuse - (float) (animSpeed * 5 / (1.25 * unitTime));
                 } else {
                     hypotenuse = 0;
                     timerI.cancel();
                 }
             }
-        }, 0, (long) unitTime / animSpeed);
+        }, 0, (long) (1.25 * unitTime / animSpeed));
     }
 
-    /**
-     * 当前图片自动归位的最终缩放倍率
-     */
-    private static float endM;
     /**
      * 当前图片自动归位的最终X坐标
      */
@@ -738,22 +783,17 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
     private static float endY;
     private static int num;
 
-    private Timer timerA;
-
     /**
      * 调整因越界或缩放大小不符合要求的图片位置和图片大小（当前图片自动归位）
      */
     private boolean adjustPosition() {
-        // 如果松手的时候大小小于默认大小
-        float startM = endM = nm;
-        if (nm < c.dm) {
-            endM = c.dm;
-        }
         float startX = endX = c.tmx;
         float startY = endY = c.tmy;
         boolean bx = crossBoundaryX();
         boolean by = crossBoundaryY();
-        if (!bx && !by) return false;
+        if (!bx && !by) {
+            return false;
+        }
         // 如果X越界，则重新设置X位置
         if (bx) {
             // 如果是左越界，即左边存在黑条
@@ -777,8 +817,7 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
         num = 0;
         float moveX = animSpeed * (endX - startX) / unitTime;
         float moveY = animSpeed * (endY - startY) / unitTime;
-        float moveM = animSpeed * (endM - startM) / unitTime;
-        timerA = new Timer();
+        Timer timerA = new Timer();
         timerA.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -786,16 +825,10 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
                     timerA.cancel();
                 }
                 if (num < unitTime / animSpeed) {
-                    nm = nm + moveM;
-                    float tmx = c.tmx + moveX;
-                    float tmy = c.tmy + moveY;
-                    setScale(nm);
-                    homingAll(tmx, tmy);
+                    postTranslate(moveX, moveY);
                     postInvalidate();
                     num++;
                 } else {
-                    nm = endM;
-                    setScale(nm);
                     homingAll(endX, endY);
                     postInvalidate();
                     timerA.cancel();
@@ -819,7 +852,7 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
      */
     private boolean crossBoundaryX() {
         // 计算x方向上的最值
-        minX = sWidth - c.width * endM;
+        minX = sWidth - c.width * nm;
         maxX = 0;
         // 判断图片在x方向上是否过界
         return c.tmx <= minX || c.tmx >= maxX;
@@ -839,11 +872,10 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
      */
     private boolean crossBoundaryY() {
         // 计算y方向上的最值
-        if (c.height * endM < getHeight()) {
-            minY = (sHeight - c.height * endM) / 2;
-            maxY = minY;
+        if (c.height * nm < getHeight()) {
+            maxY = minY = (sHeight - c.height * nm) / 2;
         } else {
-            minY = sHeight - c.height * endM;
+            minY = sHeight - c.height * nm;
             maxY = 0;
         }
         // 判断图片在y方向上是否过界
@@ -875,17 +907,21 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
     };
 
     /**
-     * 根据设置的预加载图片数量 {@link ImagePreviewView#preSize} 确定要加载的图片的索引
-     * 并发送消息调用 {@link ImagePreviewView#loadPic(int)} 进行加载
+     * 根据设置的预加载图片数量 {@link PreviewView#preSize} 确定要加载的图片的索引
+     * 并发送消息调用 {@link PreviewView#loadPic(int)} 进行加载
      */
     private void loadPrePic() {
-        for (int i = 0; i < preSize; i++) {
+        for (int i = 0; i <= preSize + 1; i++) {
             int j = ((index - preSize / 2) + i);
-            if (j >= 0 && j <= uriList.size() - 1
-                    && (bitmapList.get(j) == null
-                    || (bitmapList.get(j) != null
-                    && bitmapList.get(j).get() == null))) {
-                mainHandler.handleMessage(mainHandler.obtainMessage(LOAD_PIC, j));
+            if (j >= 0 && j <= uriList.size() - 1) {
+                Bitmap bitmap = null;
+                if (bitmapList.get(j) != null) {
+                    bitmap = bitmapList.get(j).get();
+                }
+                setBitmap(bitmap, j);
+                if (bitmap == null) {
+                    mainHandler.handleMessage(mainHandler.obtainMessage(LOAD_PIC, j));
+                }
             }
         }
     }
@@ -915,21 +951,7 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
             Bitmap bitmap = hunter.getResult();
             WeakReference<Bitmap> wBitmap = new WeakReference<>(bitmap);
             bitmapList.set(i, wBitmap);
-            if (i == index - 1) {
-                l.setBitmap(bitmap, sWidth, sHeight);
-                matrixL.setScale(l.dm, l.dm);
-                setTranslate(l.tmx, l.tmy, matrixL);
-            } else if (i == index) {
-                c.setBitmap(bitmap, sWidth, sHeight);
-                matrixC.setScale(c.dm, c.dm);
-                setTranslate(c.tmx, c.tmy, matrixC);
-                m = nm = c.dm;
-            } else if (i == index + 1) {
-                n.setBitmap(bitmap, sWidth, sHeight);
-                matrixN.setScale(n.dm, n.dm);
-                setTranslate(n.tmx, n.tmy, matrixN);
-            }
-            postInvalidate();
+            setBitmap(bitmap, i);
         }
 
         @Override
@@ -938,25 +960,37 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
         }
     }
 
+    private void setBitmap(Bitmap bitmap, int i) {
+        if (i == index - 1) {
+            l.setBitmap(bitmap, LAST);
+            matrixL.setScale(l.dm, l.dm);
+            setTranslate(l.tmx, l.tmy, matrixL);
+        } else if (i == index && c.b != bitmap) {
+            c.setBitmap(bitmap, CENTER);
+            matrixC.setScale(c.dm, c.dm);
+            setTranslate(c.tmx, c.tmy, matrixC);
+            m = nm = c.dm;
+        } else if (i == index + 1) {
+            n.setBitmap(bitmap, NEXT);
+            matrixN.setScale(n.dm, n.dm);
+            setTranslate(n.tmx, n.tmy, matrixN);
+        }
+        postInvalidate();
+    }
+
     /**
      * 存储在屏幕上显示的图片（包括上一张，中心和下一张）的信息
      */
-    private static class BitmapInfo {
+    private class BitmapInfo {
 
-        private static final int LAST = -1;
-        private static final int CENTER = 0;
-        private static final int NEXT = 1;
-
-        private BitmapInfo(Bitmap b, float sWidth, float sHeight, int position) {
+        private BitmapInfo(Bitmap b, int position) {
             if (b != null) {
                 this.b = b;
             } else {
-                this.b = ImagePreviewView.errorBitmap;
+                this.b = errorBitmap;
             }
-            if (b != null) {
-                width = b.getWidth();
-                height = b.getHeight();
-            }
+            width = this.b.getWidth();
+            height = this.b.getHeight();
             dm = sWidth / width;
             tmy = (sHeight - height * dm) / 2;
             switch (position) {
@@ -965,9 +999,14 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
                     break;
                 case CENTER:
                     tmx = 0;
+                    nm = dm;
                     break;
                 case NEXT:
-                    tmx = sWidth + interval;
+                    if (c != null) {
+                        tmx = nm * c.width + interval;
+                    } else {
+                        tmx = sWidth + interval;
+                    }
                     break;
                 default:
                     break;
@@ -1003,51 +1042,64 @@ public class ImagePreviewView extends androidx.appcompat.widget.AppCompatImageVi
         private float tmy;
 
         /**
-         * 根据图片是上一张，中间或下一张改变图片的位置
+         * 重新设置图片
          *
-         * @param sWidth   屏幕的宽
-         * @param sHeight  屏幕的高
-         * @param position 图片的位置（上一张，中间或下一张）
+         * @param b 位图
          */
-        private BitmapInfo changePosition(float sWidth, float sHeight, int position) {
+        private void setBitmap(Bitmap b, int position) {
+            if (b != null) {
+                this.b = b;
+            } else {
+                this.b = errorBitmap;
+            }
+            width = this.b.getWidth();
+            height = this.b.getHeight();
+            dm = sWidth / width;
             switch (position) {
                 case LAST:
                     tmx = -sWidth - interval;
-                    tmy = (sHeight - height * dm) / 2;
                     break;
                 case CENTER:
                     tmx = 0;
-                    tmy = (sHeight - height * dm) / 2;
+                    nm = dm;
                     break;
                 case NEXT:
-                    tmx = sWidth + interval;
-                    tmy = (sHeight - height * dm) / 2;
+                    if (c != null) {
+                        tmx = nm * c.width + interval;
+                    } else {
+                        tmx = sWidth + interval;
+                    }
                     break;
                 default:
                     break;
             }
-            return this;
+            tmy = (sHeight - height * dm) / 2;
         }
 
-        /**
-         * 重新设置图片
-         *
-         * @param b       位图
-         * @param sWidth  屏幕的宽
-         * @param sHeight 屏幕的高
-         */
-        private void setBitmap(Bitmap b, float sWidth, float sHeight) {
-            if (b != null) {
-                this.b = b;
-                width = b.getWidth();
-                height = b.getHeight();
-            } else {
-                this.b = ImagePreviewView.errorBitmap;
-                width = errorBitmap.getWidth();
-                height = errorBitmap.getHeight();
-            }
+        private void reset(int position) {
+            this.b = errorBitmap;
+            width = this.b.getWidth();
+            height = this.b.getHeight();
             dm = sWidth / width;
             tmy = (sHeight - height * dm) / 2;
+            switch (position) {
+                case LAST:
+                    tmx = -sWidth - interval;
+                    break;
+                case CENTER:
+                    tmx = 0;
+                    nm = dm;
+                    break;
+                case NEXT:
+                    if (c != null) {
+                        tmx = nm * c.width + interval;
+                    } else {
+                        tmx = sWidth + interval;
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
 
     }

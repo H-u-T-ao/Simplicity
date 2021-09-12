@@ -1,5 +1,6 @@
 package com.fengjiaxing.simplicity;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -100,6 +101,7 @@ public class ImageSelectView extends androidx.appcompat.widget.AppCompatImageVie
         super.onMeasure(widthMeasureSpec, widthMeasureSpec);
     }
 
+    @SuppressLint("ResourceAsColor")
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -108,7 +110,7 @@ public class ImageSelectView extends androidx.appcompat.widget.AppCompatImageVie
             this.selected = true;
             float s = getWidth();
             float r = s / 2;
-            canvas.drawColor(0x88CFB9FF);
+            canvas.drawColor(R.color.app_theme_color);
             paint.setTextSize(5 * r / 4);
             canvas.drawText(Integer.toString(i + 1), s / 2, (s / 2 + r / 2), paint);
         }
@@ -210,13 +212,6 @@ public class ImageSelectView extends androidx.appcompat.widget.AppCompatImageVie
     }
 
     /**
-     * 获取选择图片的最大数量
-     */
-    public static int getMax() {
-        return max;
-    }
-
-    /**
      * 设置选择图片的最大数量
      */
     public static void setMax(int max) {
@@ -244,6 +239,11 @@ public class ImageSelectView extends androidx.appcompat.widget.AppCompatImageVie
      * 清除选择列表
      */
     public static void clearList() {
+        for (ImageSelectView view : viewSet) {
+            view.selected = false;
+            view.invalidate();
+        }
+        viewSet.clear();
         list.clear();
     }
 

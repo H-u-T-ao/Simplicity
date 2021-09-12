@@ -5,7 +5,7 @@
     android:background="@color/app_transparent">
 
     <com.fengjiaxing.simplicity.ImageSelectView
-        android:id="@+id/hu_iv_item_list_1"
+        android:id="@+id/siv_item_list_1"
         android:layout_width="0dp"
         android:layout_height="1dp"
         android:layout_marginHorizontal="2dp"
@@ -14,7 +14,7 @@
         android:scaleType="centerCrop" />
 
     <com.fengjiaxing.simplicity.ImageSelectView
-        android:id="@+id/hu_iv_item_list_2"
+        android:id="@+id/siv_item_list_2"
         android:layout_width="0dp"
         android:layout_height="1dp"
         android:layout_marginVertical="1dp"
@@ -23,7 +23,7 @@
         android:scaleType="centerCrop" />
 
     <com.fengjiaxing.simplicity.ImageSelectView
-        android:id="@+id/hu_iv_item_list_3"
+        android:id="@+id/siv_item_list_3"
         android:layout_width="0dp"
         android:layout_height="1dp"
         android:layout_marginVertical="1dp"
@@ -31,7 +31,7 @@
         android:scaleType="centerCrop" />
 
     <com.fengjiaxing.simplicity.ImageSelectView
-        android:id="@+id/hu_iv_item_list_4"
+        android:id="@+id/siv_item_list_4"
         android:layout_width="0dp"
         android:layout_height="1dp"
         android:layout_marginHorizontal="2dp"

@@ -1,46 +1,41 @@
-package com.fengjiaxing.simplicity.Adapter;
+package com.fengjiaxing.simplicity;
 
-import android.app.Activity;
 import android.app.ActivityOptions;
 import android.content.Intent;
 import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.fengjiaxing.picload.RequestBuilder;
 import com.fengjiaxing.picload.Simplicity;
-import com.fengjiaxing.simplicity.ImagePreview.ImagePreviewActivity;
-import com.fengjiaxing.simplicity.ImageSelectView;
-import com.fengjiaxing.simplicity.R;
 
 import java.util.ArrayList;
 
-public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
+public class AdapterMain extends RecyclerView.Adapter<AdapterMain.ViewHolder> {
 
-    private final Activity activity;
-    private final ArrayList<Uri> list;
+    private final MainActivity activity;
+    static ArrayList<Uri> list;
 
     private RequestBuilder.CompressConfig compressConfig;
 
-    public AdapterUri(Activity activity, ArrayList<Uri> list) {
+    public AdapterMain(MainActivity activity, ArrayList<Uri> list) {
         this.activity = activity;
-        this.list = list;
+        AdapterMain.list = list;
     }
 
     @NonNull
     @Override
-    public AdapterUri.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_list, parent, false);
+    public AdapterMain.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_list_main, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull AdapterUri.ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull AdapterMain.ViewHolder holder, int position) {
         Uri uri1 = null;
         Uri uri2 = null;
         Uri uri3 = null;
@@ -82,10 +77,10 @@ public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
 
         public ViewHolder(@NonNull View view) {
             super(view);
-            iv1 = view.findViewById(R.id.hu_iv_item_list_1);
-            iv2 = view.findViewById(R.id.hu_iv_item_list_2);
-            iv3 = view.findViewById(R.id.hu_iv_item_list_3);
-            iv4 = view.findViewById(R.id.hu_iv_item_list_4);
+            iv1 = view.findViewById(R.id.siv_item_list_1);
+            iv2 = view.findViewById(R.id.siv_item_list_2);
+            iv3 = view.findViewById(R.id.siv_item_list_3);
+            iv4 = view.findViewById(R.id.siv_item_list_4);
         }
     }
 
@@ -116,16 +111,27 @@ public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
                         .into(iv);
             }
             iv.setUri(uri);
+            iv.setOnSelectedListener(new ImageSelectView.OnSelectedListener() {
+                @Override
+                public void onSelected(ImageSelectView view) {
+                    String str = "完成(已选择" + ImageSelectView.getSelectedCount() + "项)";
+                    activity.btn.setText(str);
+                }
+
+                @Override
+                public void onUnSelected(ImageSelectView view) {
+                    String str = "完成(已选择" + ImageSelectView.getSelectedCount() + "项)";
+                    activity.btn.setText(str);
+                }
+            });
             iv.setOnNormalClickListener(() -> {
-                Intent intent = new Intent(activity, ImagePreviewActivity.class);
-                intent.putParcelableArrayListExtra("list", list);
+                Intent intent = new Intent(activity, PreviewActivity.class);
+                intent.putParcelableArrayListExtra("list", null);
+                intent.putExtra("useList", false);
                 intent.putExtra("index", index);
                 activity.startActivity(intent,
                         ActivityOptions
-                                .makeSceneTransitionAnimation(
-                                        activity,
-                                        iv,
-                                        "name")
+                                .makeSceneTransitionAnimation(activity, iv, "name")
                                 .toBundle());
             });
             iv.setOnLongClickListener(v -> {
@@ -134,9 +140,9 @@ public class AdapterUri extends RecyclerView.Adapter<AdapterUri.ViewHolder> {
                     ImageSelectView.setSelectable(true);
                     boolean b = iv.selected();
                     if (b) {
-                        Toast.makeText(activity, "返回以退出选择模式", Toast.LENGTH_LONG).show();
+                        ToastUtil.showToast(activity, "返回以退出选择模式");
                     } else {
-                        Toast.makeText(activity, "已达到选择的最大数量", Toast.LENGTH_LONG).show();
+                        ToastUtil.showToast(activity, "已达到选择的最大数量");
                     }
                 }
                 return true;

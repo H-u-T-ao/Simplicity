@@ -9,27 +9,31 @@ import android.graphics.Matrix;
 public class SimplicityCompressConfig implements RequestBuilder.CompressConfig {
 
     /**
-     * 允许的图片最大大小
+     * 允许的图片最大宽
      */
-    private final int maxByteCount;
-
-    public SimplicityCompressConfig(int maxByteCount) {
-        this.maxByteCount = maxByteCount;
-    }
+    private final float maxWidth;
 
     /**
-     * 每一次将图片的长和宽都压缩至原来的一半，直到大小符合要求为止
+     * 允许的图片最大高
      */
+    private final float maxHeight;
+
+    public SimplicityCompressConfig(float maxWidth, float maxHeight) {
+        this.maxWidth = maxWidth;
+        this.maxHeight = maxHeight;
+    }
+
     @Override
     public Bitmap Compress(Bitmap bitmap) {
-        Matrix matrix = new Matrix();
-        matrix.setScale(0.5f, 0.5f);
         int byteCount = bitmap.getByteCount();
-        while (byteCount > maxByteCount) {
-            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(),
-                    bitmap.getHeight(), matrix, true);
-            byteCount = bitmap.getByteCount();
-        }
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        float maxS = Math.max(maxWidth / width, maxHeight / height);
+        float s = Math.min(1f, maxS);
+        Matrix matrix = new Matrix();
+        matrix.setScale(s, s);
+        bitmap = Bitmap.createBitmap(bitmap, 0, 0,
+                width, height, matrix, true);
         return bitmap;
     }
 

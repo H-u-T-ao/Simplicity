@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
+import android.app.ActivityOptions;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -16,32 +16,20 @@ import android.os.Bundle;
 import android.view.Display;
 import android.view.KeyEvent;
 import android.widget.Button;
-import android.widget.Toast;
 
 import com.fengjiaxing.picload.SimplicityCompressConfig;
-import com.fengjiaxing.simplicity.Adapter.AdapterUri;
-import com.fengjiaxing.simplicity.ImagePreview.ImagePreviewActivity;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * 主活动MainActivity
  */
 public class MainActivity extends AppCompatActivity {
 
-    public static float refreshRate;
+    static float refreshRate;
 
-    private Button btnSelectNum;
-
-    private final ArrayList<Uri> data = new ArrayList<>();
-
-    private int num;
-
-    private Timer timer;
+    Button btn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,16 +54,15 @@ public class MainActivity extends AppCompatActivity {
      */
     private void init() {
         RecyclerView list = findViewById(R.id.rv_main_list);
-        btnSelectNum = findViewById(R.id.btn_main_select_num);
+        btn = findViewById(R.id.btn_main_select_num);
 
-        String path = "/storage/emulated/0/DCIM/Camera";
-        getFilesAllName(path);
-        AdapterUri adapter = new AdapterUri(this, data);
+        ArrayList<Uri> data = PictureGetter.get(this);
+        AdapterMain adapter = new AdapterMain(this, data);
 
         ImageSelectView.setMax(99);
 
         SimplicityCompressConfig compressConfig =
-                new SimplicityCompressConfig(1024 * 1024);
+                new SimplicityCompressConfig(256, 256);
         adapter.setCompressConfig(compressConfig);
 
         list.setHasFixedSize(true);
@@ -87,30 +74,22 @@ public class MainActivity extends AppCompatActivity {
         list.setLayoutManager(linearLayoutManager);
         list.setAdapter(adapter);
 
-        btnSelectNum.setOnClickListener(v -> {
+        btn.setOnClickListener(v -> {
             List<Uri> uriList = ImageSelectView.getList();
-            ArrayList<Uri> copy = new ArrayList<>(uriList);
-            Intent intent = new Intent(this, ImagePreviewActivity.class);
             if (uriList.size() == 0) {
-                intent.putParcelableArrayListExtra("list", data);
+                ToastUtil.showToast(this, "请长按进行选择");
             } else {
+                ArrayList<Uri> copy = new ArrayList<>(uriList);
+                Intent intent = new Intent(this, PreviewActivity.class);
                 intent.putParcelableArrayListExtra("list", copy);
+                intent.putExtra("useList", true);
+                intent.putExtra("index", 0);
+                startActivity(intent,
+                        ActivityOptions
+                                .makeSceneTransitionAnimation(this, btn, "name")
+                                .toBundle());
             }
-            intent.putExtra("index", 0);
-            startActivity(intent);
         });
-
-        timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @SuppressLint("SetTextI18n")
-            @Override
-            public void run() {
-                if (num != ImageSelectView.getSelectedCount()) {
-                    num = ImageSelectView.getSelectedCount();
-                    runOnUiThread(() -> btnSelectNum.setText("完成(已选择" + num + "项)"));
-                }
-            }
-        }, 0, 1);
     }
 
     /**
@@ -124,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
             if (selectable) {
                 ImageSelectView.clearList();
                 ImageSelectView.setSelectable(false);
+                ToastUtil.showToast(this, "退出选择模式");
                 return true;
             }
             return super.onKeyDown(keyCode, event);
@@ -142,42 +122,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        timer.cancel();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // SimplicityImageView.clearList();
-    }
-
-    /**
-     * 获取指定路径的所有文件
-     */
-    private void getFilesAllName(String path) {
-        File file = new File(path);
-        File[] files = file.listFiles();
-        if (files != null) {
-            for (File value : files) {
-                if (checkIsImageFile(value.getPath())) {
-                    data.add(Uri.fromFile(value));
-                }
-            }
-        }
-    }
-
-    /**
-     * 检查文件是不是图片文件（限于jpg, png, gif, jpeg, bmp）
-     */
-    private static boolean checkIsImageFile(String fName) {
-        boolean isImageFile = false;
-        //获取文件拓展名
-        String fileEnd = fName.substring(fName.lastIndexOf(".") + 1).toLowerCase();
-        if (fileEnd.equals("jpg") || fileEnd.equals("png") || fileEnd.equals("gif")
-                || fileEnd.equals("jpeg") || fileEnd.equals("bmp")) {
-            isImageFile = true;
-        }
-        return isImageFile;
     }
 
     /**
@@ -190,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
                     grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 init();
             } else {
-                Toast.makeText(this, "啊这，不给权限用不了的啊", Toast.LENGTH_LONG).show();
+                ToastUtil.showToast(this, "啊这，不给权限用不了的啊");
                 finish();
             }
         }

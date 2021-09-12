@@ -29,7 +29,7 @@
         android:layout_height="match_parent"
         android:layout_above="@id/rl_main_select_bar"
         android:layout_below="@id/rl_main_action_bar"
-        android:background="#F0EAFF" />
+        android:background="@color/app_theme_color" />
 
     <RelativeLayout
         android:id="@+id/rl_main_select_bar"
